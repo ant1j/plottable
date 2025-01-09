@@ -505,10 +505,10 @@ class Table:
                 textprops = self._get_column_textprops(col_def)
 
                 column_type = ColumnType.STRING
-                if "::{" in str(_content):
-                    column_type = ColumnType.HIGHLIGHTTEXT
+                if "</>" in str(_content):
+                    column_type = ColumnType.FLEXITEXT
 
-                # FIXME should pass `highlight_textprops` to the constructor
+                # FIXME should pass `highlight_textprops` / flexitext_props to the constructor
                 cell = create_cell(
                     column_type=column_type,
                     xy=(x, idx),

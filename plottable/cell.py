@@ -5,12 +5,11 @@ from typing import Any, Callable, Dict, List, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from flexitext import flexitext
+from highlight_text import HighlightText
 from matplotlib.patches import Rectangle
 
 from .column_def import ColumnType
-
-
-from highlight_text import HighlightText
 
 
 def create_cell(column_type: ColumnType, *args, **kwargs) -> TableCell:
@@ -28,6 +27,8 @@ def create_cell(column_type: ColumnType, *args, **kwargs) -> TableCell:
         return TextCell(*args, **kwargs)
     elif column_type is ColumnType.HIGHLIGHTTEXT:
         return HighlightTextCell(*args, **kwargs)
+    elif column_type is ColumnType.FLEXITEXT:
+        return FlexiTextCell(*args, **kwargs)
 
 
 class Cell:
@@ -292,7 +293,7 @@ class TextCell(TableCell):
         return x, y
 
     def __repr__(self) -> str:
-        return f"TextCell(xy={self.xy}, content={self.content}, row_idx={self.index[0]}, col_idx={self.index[1]})"  # noqa
+        return f"{self.__class__.__name__}(xy={self.xy}, content={self.content}, row_idx={self.index[0]}, col_idx={self.index[1]})"  # noqa
 
 
 class HighlightTextCell(TextCell):
@@ -366,8 +367,77 @@ class HighlightTextCell(TextCell):
             **self.textprops,
         )
 
-    def __repr__(self) -> str:
-        return f"HighlightTextCell(xy={self.xy}, content={self.content}, row_idx={self.index[0]}, col_idx={self.index[1]})"  # noqa
+
+class FlexiTextCell(TextCell):
+    """A FlexiTextCell class for a plottable.table.Table that creates a text inside its rectangle patch."""
+
+    def __init__(
+        self,
+        xy: Tuple[float, float],
+        content: str | Number,
+        row_idx: int,
+        col_idx: int,
+        width: float = 1,
+        height: float = 1,
+        ax: mpl.axes.Axes = None,
+        rect_kw: Dict[str, Any] = {},
+        textprops: Dict[str, Any] = {},
+        flexitext_props: Dict[str, Any] | None = None,
+        padding: float = 0.1,
+    ):
+        """
+        Args:
+            xy (Tuple[float, float]):
+                lower left corner of a rectangle
+            content (Any):
+                the content of the cell
+            row_idx (int):
+                row index
+            col_idx (int):
+                column index
+            width (float, optional):
+                width of the rectangle cell. Defaults to 1.
+            height (float, optional):
+                height of the rectangle cell. Defaults to 1.
+            ax (mpl.axes.Axes, optional):
+                matplotlib Axes object. Defaults to None.
+            rect_kw (Dict[str, Any], optional):
+                keywords passed to matplotlib.patches.Rectangle. Defaults to {}.
+            textprops (Dict[str, Any], optional):
+                textprops passed to matplotlib.text.Text. Defaults to {}.
+            padding (float, optional):
+                Padding around the text within the rectangle patch. Defaults to 0.1.
+
+        """
+        super().__init__(
+            xy=xy,
+            width=width,
+            height=height,
+            content=content,
+            row_idx=row_idx,
+            col_idx=col_idx,
+            ax=ax,
+            rect_kw=rect_kw,
+            textprops=textprops,
+            padding=padding,
+        )
+
+        self.flexitext_props = flexitext_props
+
+    def set_text(self):
+        x, y = self._get_text_xy()
+
+        content = str(self.content)
+
+        self.text = flexitext(
+            x,
+            y,
+            s=content,
+            ha="right",
+            ax=self.ax,
+            # xycoords="figure fraction",
+            # **self.textprops,
+        )
 
 
 class Sequence:  # Row and Column can inherit from this

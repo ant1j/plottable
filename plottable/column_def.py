@@ -18,6 +18,7 @@ class ColumnType(Enum):
     STRING = "string"
     SUBPLOT = "subplot"
     HIGHLIGHTTEXT = "highlighttext"
+    FLEXITEXT = "flexitext"
 
 
 def _filter_none_values(d: Dict[str, Any]) -> Dict[str, Any]:
