@@ -380,3 +380,5 @@ TSWLatexianTemp*
 
 # standalone packages
 *.sta
+
+scratchpad/
