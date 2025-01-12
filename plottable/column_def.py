@@ -91,7 +91,7 @@ class ColumnDefinition:
     """
 
     name: str
-    title: str = ""
+    title: str = None  # allows to default to name in Table._get_column_titles
     width: float = 1
     textprops: Dict[str, Any] = field(default_factory=dict)
     type: ColumnType = ColumnType.STRING
@@ -227,10 +227,13 @@ class ColumnsInfos:
         return list(self.definitions.keys())
 
     @property
-    def titles(self):
+    def titles(self, name_as_default: bool = True):
+        if not name_as_default:
+            return self.pluck("title")
+
         return [
-            definition.get("title", name)
-            for name, definition in self.definitions.items()
+            name if not title else title
+            for name, title in zip(self.names, self.pluck("title"))
         ]
 
     def get_columns_by_group(self):
@@ -240,6 +243,38 @@ class ColumnsInfos:
                 groups[definition.group].append(name)
 
         return groups
+
+    def __getitem__(self, key):
+        return self.definitions[key]
+
+    def get(self, key, default=None):
+        return self.definitions.get(key, default=default)
+
+    def pluck(self, key, default=None) -> list:
+        """Returns a list of the ColumnDefinition property requested through `key`
+
+        Args:
+            key (str): the key to look for each ColumnDefinition
+            default (Any, optional): Default value if not found. Defaults to None.
+
+        Returns:
+            list: list of the property looked for
+        """
+        return [coldef.get(key, default) for coldef in self.definitions.values()]
+
+    def dict_pluck(self, key, default=None) -> dict:
+        """Returns a list of the ColumnDefinition property requested through `key`
+
+        Args:
+            key (str): the key to look for each ColumnDefinition
+            default (Any, optional): Default value if not found. Defaults to None.
+
+        Returns:
+            dict: dict of the property looked for as value, name as key
+        """
+        return {
+            name: coldef.get(key, default) for name, coldef in self.definitions.items()
+        }
 
 
 # abbreviated name to reduce writing
