@@ -141,7 +141,7 @@ def bar(
     bar = ax.barh(0.5, val, fc=color, ec="None", **kwargs, zorder=0.05)
 
     if annotate:
-        if val < 0.5 * xlim[1]:
+        if val < 0.75 * xlim[1]:
             ha = "left"
             x = val + 0.025 * abs(xlim[1] - xlim[0])
         else:
@@ -223,7 +223,6 @@ def percentile_bars(
     rects = []
 
     for x in np.linspace(0, 0.9, 10):
-
         bg_rect = FancyBboxPatch(
             xy=(x, 0),
             width=0.1,
