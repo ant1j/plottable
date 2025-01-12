@@ -9,11 +9,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .cell import Column, Row, SubplotCell, TextCell, create_cell
-from .column_def import ColumnDefinition, ColumnType
-from .font import contrasting_font_color
-from .formatters import apply_formatter
-from .helpers import _replace_lw_key
+from plottable.cell import Column, Row, SubplotCell, TableCell, create_cell
+from plottable.column_def import ColumnDefinition, ColumnsInfos
+from plottable.font import contrasting_font_color
+from plottable.formatters import apply_formatter
+from plottable.helpers import _replace_lw_key
 
 
 class Table:
@@ -93,6 +93,8 @@ class Table:
         column_border_kw: Dict[str, Any] = {},
         even_row_color: str | Tuple = None,
         odd_row_color: str | Tuple = None,
+        footer: str = "",
+        group_props: Dict[str, Any] = {},
     ):
         if index_col is not None:
             if index_col in df.columns:
@@ -136,9 +138,7 @@ class Table:
         self._apply_column_cmaps()
         self._apply_column_text_cmaps()
 
-        self._plot_col_group_labels()
-
-        ymax = self.n_rows
+        self._plot_col_group_labels(group_props)
 
         if col_label_divider:
             self._plot_col_label_divider(**col_label_divider_kw)
@@ -148,22 +148,48 @@ class Table:
             self._plot_row_dividers(**row_divider_kw)
         self._plot_column_borders(**column_border_kw)
 
+        self._footer = self._plot_footer(footer)
+
         self.ax.set_xlim(-0.025, sum(self._get_column_widths()) + 0.025)
 
-        miny = -self.col_label_row.height
+        ymax = self.n_rows
+        ymin = -self.col_label_row.height
         if self.col_group_cells:
-            miny -= 0.5  # FIXME hardcoded value
-            # miny -= 1  # FIXME hardcoded value
+            ymin -= 0.5  # FIXME hardcoded value
+            # ymin -= 1  # FIXME hardcoded value
 
-        self.ax.set_ylim(miny - 0.025, ymax + 0.05)
+        self.ax.set_ylim(ymin - 0.025, ymax + 0.05)
         self.ax.invert_yaxis()
 
-        self._make_subplots()
+        #####################
+        group_height = 0
+        if list(self.col_group_cells.values()):
+            group_height += list(self.col_group_cells.values())[0].height
+
+        footer_height = 0
+        if self._footer:
+            footer_height += self._footer.height
+        ymin = -(
+            self.col_label_row.height + group_height
+            # - coords.height
+        )
+        ymax = (
+            self.n_rows
+            # + self.col_label_row.height
+            # + list(self.col_group_cells.values())[0].height
+            + footer_height
+        )
+        #####################
+
+        self._plot_subplots()
 
     def _init_column_definitions(
         self, column_definitions: List[ColumnDefinition]
     ) -> None:
-        """Initializes the Tables ColumnDefinitions.
+        """
+        Initializes the Tables ColumnDefinitions.
+
+        Store column definition.
 
         Args:
             column_definitions (List[ColumnDefinition]):
@@ -191,7 +217,7 @@ class Table:
             self.column_definitions[col].get("title", col) for col in self.column_names
         ]
 
-    def _get_col_groups(self) -> set[str]:
+    def _get_column_groups(self) -> set[str]:
         """Gets the column_groups from the ColumnDefinitions.
 
         Returns:
@@ -215,25 +241,24 @@ class Table:
             if _dict.get("group") is None
         )
 
-    def _plot_col_group_labels(self) -> None:
+    def _plot_col_group_labels(self, group_props: dict = {}) -> None:
         """Plots the column group labels."""
 
-        GROUP_LABEL_TEXTPROPS = {"fontsize": 12, "fontweight": "bold"}
+        GROUP_LABEL_TEXTPROPS = {}
         GROUP_LABEL_KW = {
             "height": 0.5,
         }
-        col_groups = self._get_col_groups()
 
-        self.col_group_cells = {}
+        self.col_group_cells: dict[str, TableCell] = {}
 
-        for group in col_groups:
+        for group in self._get_column_groups():
             columns = [
                 self.columns[colname]
                 for colname, _dict in self.column_definitions.items()
                 if _dict.get("group") == group
             ]
-            x_min = min(col.get_xrange()[0] for col in columns)
-            x_max = max(col.get_xrange()[1] for col in columns)
+            x_min = min(col.xrange[0] for col in columns)
+            x_max = max(col.xrange[1] for col in columns)
             dx = x_max - x_min
 
             # CHANGED Substract the group label (default) height (1) to the `y` coordinates to position properly
@@ -244,7 +269,7 @@ class Table:
 
             textprops.update(GROUP_LABEL_TEXTPROPS)
 
-            self.col_group_cells[group] = TextCell(
+            self.col_group_cells[group] = create_cell(
                 xy=(x_min, y),
                 content=group,
                 row_idx=y,
@@ -253,7 +278,10 @@ class Table:
                 height=GROUP_LABEL_KW["height"],
                 ax=self.ax,
                 textprops=textprops,
+                # rect_kw={"facecolor": "lightpink"},
+                rich_textprops=group_props.get(group, {}),
             )
+
             self.col_group_cells[group].draw()
             self.ax.plot(
                 [x_min + 0.05 * dx, x_max - 0.05 * dx],
@@ -271,7 +299,7 @@ class Table:
         COL_LABEL_DIVIDER_KW.update(kwargs)
         self.COL_LABEL_DIVIDER_KW = COL_LABEL_DIVIDER_KW
 
-        x0, x1 = self.rows[0].get_xrange()
+        x0, x1 = self.rows[0].xrange
         self.ax.plot(
             [x0, x1],
             [0, 0],
@@ -286,9 +314,36 @@ class Table:
         FOOTER_DIVIDER_KW.update(kwargs)
         self.FOOTER_DIVIDER_KW = FOOTER_DIVIDER_KW
 
-        x0, x1 = list(self.rows.values())[-1].get_xrange()
+        x0, x1 = list(self.rows.values())[-1].xrange
         y = len(self.df)
         self.ax.plot([x0, x1], [y, y], **FOOTER_DIVIDER_KW)
+
+    def _plot_footer(self, footer: str) -> TableCell | None:
+        """Plots the footer text below the table.
+
+        Args:
+            footer (str): footer text
+        """
+        if not footer:
+            return
+
+        x0, x1 = list(self.rows.values())[-1].xrange
+        y = len(self.df)
+
+        footer_cell = create_cell(
+            xy=(x0, y),
+            content=footer,
+            row_idx=y,
+            col_idx=1,
+            width=x1 - x0,
+            height=0.5,
+            ax=self.ax,
+            textprops={"fontsize": 8, "ha": "left", "va": "top"},
+            padding=0.1 / (x1 - x0),
+        )
+        footer_cell.draw()
+
+        return footer_cell
 
     def _plot_row_dividers(self, **kwargs):
         """Plots lines between all TableRows."""
@@ -300,7 +355,7 @@ class Table:
         ROW_DIVIDER_KW.update(kwargs)
 
         for idx, row in list(self.rows.items())[1:]:
-            x0, x1 = row.get_xrange()
+            x0, x1 = row.xrange
 
             self.ax.plot([x0, x1], [idx, idx], **ROW_DIVIDER_KW)
 
@@ -315,25 +370,25 @@ class Table:
             if "border" in _def:
                 col = self.columns[name]
 
-                y0, y1 = col.get_yrange()
+                y0, y1 = col.yrange
 
                 if "l" in _def["border"].lower() or _def["border"].lower() == "both":
-                    x = col.get_xrange()[0]
+                    x = col.xrange[0]
                     self.ax.plot([x, x], [y0, y1], **COLUMN_BORDER_KW)
 
                 if "r" in _def["border"].lower() or _def["border"].lower() == "both":
-                    x = col.get_xrange()[1]
+                    x = col.xrange[1]
                     self.ax.plot([x, x], [y0, y1], **COLUMN_BORDER_KW)
 
     def _init_columns(self):
         """Initializes the Tables columns."""
-        self.columns = {}
+        self.columns: dict[str, Column] = {}
         for idx, name in enumerate(self.column_names):
             self.columns[name] = Column(index=idx, cells=[], name=name)
 
     def _init_rows(self):
         """Initializes the Tables Rows."""
-        self.rows = {}
+        self.rows: dict[str, Row] = {}
         for idx, values in enumerate(self.df.to_records()):
             self.rows[idx] = self._get_row(idx, values)
 
@@ -427,7 +482,7 @@ class Table:
                 textprops.pop("bbox")
 
             cell = create_cell(
-                column_type=ColumnType.STRING,
+                # column_type=ColumnType.STRING,
                 xy=(
                     x,
                     idx + 1 - height,
@@ -456,7 +511,7 @@ class Table:
             if isinstance(cell, SubplotCell)
         }
 
-    def _make_subplots(self) -> None:
+    def _plot_subplots(self) -> None:
         self.subplots = {}
         for key, cell in self._get_subplot_cells().items():
             self.subplots[key] = cell.make_axes_inset()
@@ -489,7 +544,6 @@ class Table:
                 plot_kw = col_def.get("plot_kw", {})
 
                 cell = create_cell(
-                    column_type=ColumnType.SUBPLOT,
                     xy=(x, idx),
                     content=_content,
                     plot_fn=plot_fn,
@@ -503,14 +557,8 @@ class Table:
 
             else:
                 textprops = self._get_column_textprops(col_def)
-
-                column_type = ColumnType.STRING
-                if "</>" in str(_content):
-                    column_type = ColumnType.FLEXITEXT
-
                 # FIXME should pass `highlight_textprops` / flexitext_props to the constructor
                 cell = create_cell(
-                    column_type=column_type,
                     xy=(x, idx),
                     content=_content,
                     row_idx=idx,
@@ -519,6 +567,7 @@ class Table:
                     rect_kw=self.cell_kw,
                     textprops=textprops,
                     ax=self.ax,
+                    rich_textprops=col_def.get("richtext_props"),
                 )
 
             row.append(cell)
@@ -570,7 +619,8 @@ class Table:
                 continue
 
             for cell in self.columns[colname].cells:
-                if isinstance(cell.content, Number) & hasattr(cell, "text"):
+                # if isinstance(cell.content, Number) & hasattr(cell, "text"):
+                if hasattr(cell, "text"):
                     cell.text.set_color(cmap_fn(cell.content))
 
     def autoset_fontcolors(
