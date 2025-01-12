@@ -75,7 +75,7 @@ def test_get_column_titles(table):
 
 
 def test_get_col_groups_are_empty(table):
-    assert table._get_col_groups() == set()
+    assert table._get_column_groups() == set()
 
 
 def test_get_col_groups(df):

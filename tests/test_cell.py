@@ -147,7 +147,7 @@ def test_create_cell_type_is_stringcell():
                 col_idx=0,
             )
         )
-        == TextCell
+        is TextCell
     )
 
 
@@ -163,7 +163,7 @@ def test_create_cell_type_is_subplotcell():
                 plot_fn=percentile_bars,
             )
         )
-        == SubplotCell
+        is SubplotCell
     )
 
 
