@@ -12,11 +12,19 @@ from matplotlib.offsetbox import AnnotationBbox, HPacker, TextArea, VPacker
 from matplotlib.patches import Circle, Rectangle
 from matplotlib.transforms import ScaledTranslation
 
-from .column_def import ColumnType
+from plottable.column_def import ColumnDefinition, ColumnType
 
 
-def create_cell(column_type: ColumnType, *args, **kwargs) -> TableCell:
+def create_cell(
+    column_type: ColumnType = ColumnType.STRING,
+    *args,
+    **kwargs,
+) -> TableCell:
     """Factory Function to create a specific TableCell depending on `column_type`.
+
+    Change the behaviour to rely on kwargs to define the right TableCell
+
+    TODO: TextCell should be defined by ColDef subclasses
 
     Args:
         column_type (ColumnType): plottable.column_def.ColumnType
@@ -24,14 +32,28 @@ def create_cell(column_type: ColumnType, *args, **kwargs) -> TableCell:
     Returns:
         TableCell: plottable.cell.TableCell
     """
-    if column_type is ColumnType.SUBPLOT:
+    if cdef := kwargs.get("col_def"):
+        print(f"({kwargs['row_idx']}, {kwargs['col_idx']}): {cdef.type}")
+    else:
+        print(f"({kwargs['row_idx']}, {kwargs['col_idx']}): No cdef")
+
+    if plot_fn := kwargs.get("plot_fn"):
         return SubplotCell(*args, **kwargs)
-    elif column_type is ColumnType.STRING:
-        return TextCell(*args, **kwargs)
-    elif column_type is ColumnType.HIGHLIGHTTEXT:
-        return HighlightTextCell(*args, **kwargs)
-    elif column_type is ColumnType.FLEXITEXT:
+
+    content = kwargs.get("content")
+    if content and "</>" in str(content):
         return FlexiTextCell(*args, **kwargs)
+    if content and "::{" in str(content):
+        return HighlightTextCell(*args, **kwargs)
+
+    is_richtextcell = (
+        getattr(cdef, "type", None) is ColumnType.RICHTEXT or "rich_textprops" in kwargs
+    )
+
+    if is_richtextcell:
+        return RichTextCell(*args, **kwargs)
+
+    return TextCell(*args, **kwargs)
 
 
 class Cell:
@@ -73,6 +95,7 @@ class TableCell(Cell):
         height: float = 1,
         ax: mpl.axes.Axes = None,
         rect_kw: Dict[str, Any] = {},
+        col_def: ColumnDefinition | None = None,
     ):
         """
         Args:
@@ -107,6 +130,7 @@ class TableCell(Cell):
             "width": width,
             "height": height,
         }
+        self.column_definition = col_def
 
         self.rect_kw.update(rect_kw)
         self.rectangle_patch = Rectangle(xy, **self.rect_kw)
@@ -137,6 +161,8 @@ class SubplotCell(TableCell):
         height: float = 1,
         ax: mpl.axes.Axes = None,
         rect_kw: Dict[str, Any] = {},
+        col_def: ColumnDefinition | None = None,
+        **kwargs,
     ):
         """
         Args:
@@ -170,6 +196,7 @@ class SubplotCell(TableCell):
             col_idx=col_idx,
             ax=ax,
             rect_kw=rect_kw,
+            col_def=col_def,
         )
 
         self._plot_fn = plot_fn
@@ -219,6 +246,8 @@ class TextCell(TableCell):
         rect_kw: Dict[str, Any] = {},
         textprops: Dict[str, Any] = {},
         padding: float = 0.1,
+        col_def: ColumnDefinition | None = None,
+        **kwargs,
     ):
         """
         Args:
@@ -253,6 +282,7 @@ class TextCell(TableCell):
             col_idx=col_idx,
             ax=ax,
             rect_kw=rect_kw,
+            col_def=col_def,
         )
 
         self.textprops = {"ha": "right", "va": "center"}
@@ -315,6 +345,8 @@ class HighlightTextCell(TextCell):
         textprops: Dict[str, Any] = {},
         highlight_textprops: Dict[str, Any] | None = None,
         padding: float = 0.1,
+        col_def: ColumnDefinition | None = None,
+        **kwargs,
     ):
         """
         Args:
@@ -351,6 +383,7 @@ class HighlightTextCell(TextCell):
             rect_kw=rect_kw,
             textprops=textprops,
             padding=padding,
+            col_def=col_def,
         )
 
         self.highlight_textprops = highlight_textprops
@@ -387,6 +420,8 @@ class FlexiTextCell(TextCell):
         textprops: Dict[str, Any] = {},
         flexitext_props: Dict[str, Any] | None = None,
         padding: float = 0.1,
+        col_def: ColumnDefinition | None = None,
+        **kwargs,
     ):
         """
         Args:
@@ -423,6 +458,7 @@ class FlexiTextCell(TextCell):
             rect_kw=rect_kw,
             textprops=textprops,
             padding=padding,
+            col_def=col_def,
         )
 
         self.flexitext_props = flexitext_props
@@ -436,7 +472,10 @@ class FlexiTextCell(TextCell):
             x,
             y,
             s=content,
-            ha="right",
+            ha=self.textprops.get("ha", "right"),
+            va=self.textprops.get("va", "center"),
+            ma=self.textprops.get("ha", "right"),
+            mva=self.textprops.get("va", "center"),
             ax=self.ax,
             # xycoords="figure fraction",
             # **self.textprops,
