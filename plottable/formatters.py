@@ -27,7 +27,7 @@ def apply_formatter(formatter: str | Callable, content: str | Number) -> str:
     """
 
     if isinstance(formatter, str):
-        return apply_string_formatter(formatter, content)
+        return formatter.format(content)
     elif isinstance(formatter, Callable):
         return formatter(content)
     else:
