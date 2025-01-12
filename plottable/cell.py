@@ -440,7 +440,8 @@ class FlexiTextCell(TextCell):
         )
 
 
-class Sequence:  # Row and Column can inherit from this
+
+class CellSequence:  # Row and Column can inherit from this
     """A Sequence of Table Cells."""
 
     def __init__(self, cells: List[TableCell], index: int):
@@ -461,7 +462,7 @@ class Sequence:  # Row and Column can inherit from this
         """
         self.cells.append(cell)
 
-    def set_alpha(self, *args) -> Sequence:
+    def set_alpha(self, *args) -> CellSequence:
         """Sets the alpha for all cells of the Sequence and returns self.
 
         Return:
@@ -471,7 +472,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_alpha(*args)
         return self
 
-    def set_color(self, *args) -> Sequence:
+    def set_color(self, *args) -> CellSequence:
         """Sets the color for all cells of the Sequence and returns self.
 
         Return:
@@ -481,7 +482,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_color(*args)
         return self
 
-    def set_facecolor(self, *args) -> Sequence:
+    def set_facecolor(self, *args) -> CellSequence:
         """Sets the facecolor for all cells of the Sequence and returns self.
 
         Return:
@@ -491,7 +492,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_facecolor(*args)
         return self
 
-    def set_edgecolor(self, *args) -> Sequence:
+    def set_edgecolor(self, *args) -> CellSequence:
         """Sets the edgecolor for all cells of the Sequence and returns self.
 
         Return:
@@ -501,7 +502,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_edgecolor(*args)
         return self
 
-    def set_fill(self, *args) -> Sequence:
+    def set_fill(self, *args) -> CellSequence:
         """Sets the fill for all cells of the Sequence and returns self.
 
         Return:
@@ -511,7 +512,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_fill(*args)
         return self
 
-    def set_hatch(self, *args) -> Sequence:
+    def set_hatch(self, *args) -> CellSequence:
         """Sets the hatch for all cells of the Sequence and returns self.
 
         Return:
@@ -521,7 +522,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_hatch(*args)
         return self
 
-    def set_linestyle(self, *args) -> Sequence:
+    def set_linestyle(self, *args) -> CellSequence:
         """Sets the linestyle for all cells of the Sequence and returns self.
 
         Return:
@@ -531,7 +532,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_linestyle(*args)
         return self
 
-    def set_linewidth(self, *args) -> Sequence:
+    def set_linewidth(self, *args) -> CellSequence:
         """Sets the linewidth for all cells of the Sequence and returns self.
 
         Return:
@@ -541,7 +542,7 @@ class Sequence:  # Row and Column can inherit from this
             cell.rectangle_patch.set_linewidth(*args)
         return self
 
-    def set_fontcolor(self, *args) -> Sequence:
+    def set_fontcolor(self, *args) -> CellSequence:
         """Sets the fontcolor for all cells texts of the Sequence and returns self.
 
         Return:
@@ -552,7 +553,7 @@ class Sequence:  # Row and Column can inherit from this
                 cell.text.set_color(*args)
         return self
 
-    def set_fontfamily(self, *args) -> Sequence:
+    def set_fontfamily(self, *args) -> CellSequence:
         """Sets the fontfamily for all cells texts of the Sequence and returns self.
 
         Return:
@@ -563,7 +564,7 @@ class Sequence:  # Row and Column can inherit from this
                 cell.text.set_fontfamily(*args)
         return self
 
-    def set_fontsize(self, *args) -> Sequence:
+    def set_fontsize(self, *args) -> CellSequence:
         """Sets the fontsize for all cells texts of the Sequence and returns self.
 
         Return:
@@ -574,7 +575,18 @@ class Sequence:  # Row and Column can inherit from this
                 cell.text.set_fontsize(*args)
         return self
 
-    def set_ha(self, *args) -> Sequence:
+    def set_fontstyle(self, *args) -> CellSequence:
+        """Sets the fontsize for all cells texts of the Sequence and returns self.
+
+        Return:
+            self[Sequence]: A Sequence of Cells
+        """
+        for cell in self.cells:
+            if hasattr(cell, "text"):
+                cell.text.set_fontstyle(*args)
+        return self
+
+    def set_ha(self, *args) -> CellSequence:
         """Sets the horizontal alignment for all cells texts of the Sequence and returns self.
 
         Return:
@@ -585,7 +597,7 @@ class Sequence:  # Row and Column can inherit from this
                 cell.text.set_ha(*args)
         return self
 
-    def set_ma(self, *args) -> Sequence:
+    def set_ma(self, *args) -> CellSequence:
         """Sets the multialignment for all cells tests of the Sequence and returns self.
 
         Return:
@@ -597,13 +609,14 @@ class Sequence:  # Row and Column can inherit from this
         return self
 
 
-class Row(Sequence):
+class Row(CellSequence):
     """A Row of TableCells."""
 
     def __init__(self, cells: List[TableCell], index: int):
         super().__init__(cells=cells, index=index)
 
-    def get_xrange(self) -> Tuple[float, float]:
+    @property
+    def xrange(self) -> Tuple[float, float]:
         """Gets the xrange of the Row.
 
         Returns:
@@ -613,7 +626,8 @@ class Row(Sequence):
             [cell.xy[0] + cell.width for cell in self.cells]
         )
 
-    def get_yrange(self) -> Tuple[float, float]:
+    @property
+    def yrange(self) -> Tuple[float, float]:
         """Gets the yrange of the Row.
 
         Returns:
@@ -638,14 +652,15 @@ class Row(Sequence):
         return f"Row(cells={self.cells}, index={self.index})"
 
 
-class Column(Sequence):
+class Column(CellSequence):
     """A Column of TableCells."""
 
     def __init__(self, cells: List[TableCell], index: int, name: str = None):
         super().__init__(cells=cells, index=index)
         self.name = name
 
-    def get_xrange(self) -> Tuple[float, float]:
+    @property
+    def xrange(self) -> Tuple[float, float]:
         """Gets the xrange of the Column.
 
         Returns:
@@ -654,7 +669,8 @@ class Column(Sequence):
         cell = self.cells[0]
         return cell.xy[0], cell.xy[0] + cell.width
 
-    def get_yrange(self) -> Tuple[float, float]:
+    @property
+    def yrange(self) -> Tuple[float, float]:
         """Gets the yrange of the Column.
 
         Returns:
