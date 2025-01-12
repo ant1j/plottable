@@ -85,7 +85,7 @@ def test_get_col_groups(df):
             ColumnDefinition(name, group="group1") for name in ["A", "B"]
         ],
     )
-    assert tab._get_col_groups() == set(["group1"])
+    assert tab._get_column_groups() == set(["group1"])
 
 
 def test_get_col_groups_multiple_groups(df):
@@ -93,7 +93,7 @@ def test_get_col_groups_multiple_groups(df):
         df,
         column_definitions=[ColumnDefinition(name, group=name) for name in df.columns],
     )
-    assert tab._get_col_groups() == set(df.columns)
+    assert tab._get_column_groups() == set(df.columns)
 
 
 def test_get_non_group_colnames(df):
@@ -356,7 +356,6 @@ def test_table_make_subplots(df):
 
 
 def test_cell_text_is_formatted_by_formatter(df):
-
     col_defs = [ColDef("A", formatter=formatters.decimal_to_percent)]
     tab = Table(df, column_definitions=col_defs)
 
