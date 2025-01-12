@@ -419,6 +419,18 @@ wheels = [
 ]
 
 [[package]]
+name = "flexitext"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4b/72/9b404e3aeb675445f65495d559aa3768ee95acc168864690980afe990881/flexitext-0.2.0.tar.gz", hash = "sha256:5a27898bffbab4b0e8f34247b35ed401bd42cc969597d7c21b7509620edebdf5", size = 12503 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/cd/cac74ea1b7d0d2a0471e886b5996926010af192c807960a98ba769f72613/flexitext-0.2.0-py3-none-any.whl", hash = "sha256:4a25e3efd3c2708c457e928da3ec7f58786516b796e6ce8738420584fd64fb35", size = 15303 },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.55.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1275,6 +1287,7 @@ name = "plottable"
 version = "0.1.5"
 source = { editable = "." }
 dependencies = [
+    { name = "flexitext" },
     { name = "highlight-text" },
     { name = "matplotlib" },
     { name = "numpy" },
@@ -1307,6 +1320,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'development'" },
+    { name = "flexitext", specifier = ">=0.2.0" },
     { name = "highlight-text", specifier = ">=0.2" },
     { name = "ipykernel", marker = "extra == 'docs'" },
     { name = "matplotlib" },
