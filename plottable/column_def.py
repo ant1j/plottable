@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List
 
+import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 
 
@@ -193,6 +195,51 @@ class SubplotColumnDefinition(TextColumnDefinition):
     plot_fn: Callable = None
     plot_kw: Dict[str, Any] = field(default_factory=dict)
 
+
+@dataclass
+class ColumnsInfos:
+    definitions: dict[str, ColumnDefinition]
+
+    @classmethod
+    def from_definitions_and_table(
+        cls, definitions: list[ColumnDefinition], table: pd.DataFrame
+    ) -> ColumnsInfos:
+        definitions = definitions or []
+
+        if table.index.name is None:
+            raise ValueError("Table index must have a name.")
+
+        column_definitions = dict.fromkeys([table.index.name] + list(table.columns))
+
+        # Populate with definitions list
+        for cdef in definitions:
+            column_definitions[cdef.name] = cdef
+
+        # Add default for missing col defs
+        for col in column_definitions:
+            if column_definitions[col] is None:
+                column_definitions[col] = ColumnDefinition(name=col)
+
+        return cls(column_definitions)
+
+    @property
+    def names(self):
+        return list(self.definitions.keys())
+
+    @property
+    def titles(self):
+        return [
+            definition.get("title", name)
+            for name, definition in self.definitions.items()
+        ]
+
+    def get_columns_by_group(self):
+        groups = defaultdict(list)
+        for name, definition in self.definitions.items():
+            if definition.group:
+                groups[definition.group].append(name)
+
+        return groups
 
 
 # abbreviated name to reduce writing
