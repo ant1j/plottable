@@ -3,6 +3,10 @@ from __future__ import annotations
 from numbers import Number
 from typing import Callable
 
+from attr import dataclass
+
+from plottable.column_def import ColumnDefinition
+
 
 def apply_string_formatter(fmt: str, val: str | Number) -> str:
     return fmt.format(val)
@@ -87,3 +91,10 @@ def signed_integer(val: int) -> str:
         return str(val)
     else:
         return f"+{val}"
+
+
+@dataclass
+class Formatter:
+    @classmethod
+    def from_column_definition(cls, coldef: ColumnDefinition):
+        pass
