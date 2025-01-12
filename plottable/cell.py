@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import zip_longest
 from numbers import Number
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -7,7 +8,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from flexitext import flexitext
 from highlight_text import HighlightText
-from matplotlib.patches import Rectangle
+from matplotlib.offsetbox import AnnotationBbox, HPacker, TextArea, VPacker
+from matplotlib.patches import Circle, Rectangle
+from matplotlib.transforms import ScaledTranslation
 
 from .column_def import ColumnType
 
@@ -439,6 +442,134 @@ class FlexiTextCell(TextCell):
             # **self.textprops,
         )
 
+
+class RichTextCell(TextCell):
+    """A RichTextCell class for a plottable.table.Table that creates a text inside its rectangle patch."""
+
+    def __init__(
+        self,
+        xy: Tuple[float, float],
+        content: str | Number,
+        row_idx: int,
+        col_idx: int,
+        width: float = 1,
+        height: float = 1,
+        ax: mpl.axes.Axes = None,
+        rect_kw: Dict[str, Any] = {},
+        textprops: Dict[str, Any] = {},
+        rich_textprops: Dict[str, Any] = {},
+        padding: float = 0.1,
+        col_def: ColumnDefinition | None = None,
+        **kwargs,
+    ):
+        """
+        Args:
+        """
+        super().__init__(
+            xy=xy,
+            width=width,
+            height=height,
+            content=content,
+            row_idx=row_idx,
+            col_idx=col_idx,
+            ax=ax,
+            rect_kw=rect_kw,
+            textprops=textprops,
+            padding=padding,
+            col_def=col_def,
+        )
+
+        self.rich_textprops = rich_textprops
+
+    def set_text(self):
+        x, y = self._get_text_xy()
+
+        offsetbox = self._build_text_grid(
+            self.content,
+            rich_textprops=self.rich_textprops,
+            textprops=self.textprops,
+        )
+
+        ######
+        # Show point of alignement for text
+        trans = self.ax.figure.dpi_scale_trans + ScaledTranslation(
+            x, y, self.ax.transData
+        )
+
+        self.ax.add_artist(Circle((0, 0), 0.05, color="red", transform=trans))
+
+        ######
+        self.text = AnnotationBbox(
+            offsetbox,
+            (x, y),
+            # bboxprops=dict(boxstyle="sawtooth"), # only works if frameon=True
+            frameon=False,
+            box_alignment=(0.5, 0),
+            pad=0,
+        )
+
+        self.ax.add_artist(self.text)
+
+    def _build_text_grid(
+        self,
+        texts: CellSequence | str,
+        rich_textprops: CellSequence[dict],
+        textprops: dict = {},
+    ) -> VPacker:
+        """_summary_
+
+        Args:
+            texts (Sequence | str): _description_
+            rich_textprops (Sequence[dict]): _description_
+            textprops (dict, optional): _description_. Defaults to {}.
+
+        Raises:
+            ValueError: _description_
+            ValueError: _description_
+
+        Returns:
+            VPacker: _description_
+        """
+
+        DEFAULT_TEXTPROPS = {
+            "ha": "center",
+            "va": "center",
+        }
+
+        textprops_value_fn = lambda val: {}
+        if isinstance(rich_textprops, Callable):
+            textprops_value_fn = rich_textprops
+            rich_textprops = {}
+
+        if isinstance(texts, str):
+            texts = texts.split("\n")
+            # FIXME remove this check
+            if len(texts) < 0:
+                raise ValueError(
+                    "RichTextCell content cannot be a single-line string. Use TextCell instead."
+                )
+
+        if all(isinstance(item, str) for item in texts):
+            # List of strings - considered as single-column grid
+            textarea_grid = []
+
+            for text_line, props_line in zip_longest(
+                texts, rich_textprops, fillvalue={}
+            ):
+                textarea_row = []
+                if isinstance(text_line, str):
+                    text_line = [text_line]
+                for text, props in zip_longest(
+                    text_line, props_line, fillvalue=DEFAULT_TEXTPROPS
+                ):
+                    txtarea_txtprops = props.update(textprops_value_fn(text))
+                    textarea_row.append(TextArea(text, textprops=txtarea_txtprops))
+                textarea_grid.append(
+                    HPacker(children=textarea_row, pad=0, sep=0, align="center")
+                )
+            return VPacker(children=textarea_grid, pad=0, sep=8, align="center")
+
+        raise ValueError("Invalid format for texts parameter")
 
 
 class CellSequence:  # Row and Column can inherit from this
