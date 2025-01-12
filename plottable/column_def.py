@@ -19,6 +19,7 @@ class ColumnType(Enum):
     SUBPLOT = "subplot"
     HIGHLIGHTTEXT = "highlighttext"
     FLEXITEXT = "flexitext"
+    RICHTEXT = "richtext"
 
 
 def _filter_none_values(d: Dict[str, Any]) -> Dict[str, Any]:
@@ -88,9 +89,10 @@ class ColumnDefinition:
     """
 
     name: str
-    title: str = None
+    title: str = ""
     width: float = 1
     textprops: Dict[str, Any] = field(default_factory=dict)
+    type: ColumnType = ColumnType.STRING
     formatter: Callable | str = None
     cmap: Callable | LinearSegmentedColormap = None
     text_cmap: Callable | LinearSegmentedColormap = None
@@ -98,14 +100,6 @@ class ColumnDefinition:
     plot_fn: Callable = None
     plot_kw: Dict[str, Any] = field(default_factory=dict)
     border: str | List = None
-
-    def _asdict(self) -> Dict[str, Any]:
-        """Returns the attributes as a dictionary.
-
-        Returns:
-            Dict[str, Any]: Dictionary of Column Attributes.
-        """
-        return asdict(self)
 
     def _as_non_none_dict(self) -> Dict[str, Any]:
         """Returns the attributes as a dictionary, filtering out
@@ -115,6 +109,90 @@ class ColumnDefinition:
             Dict[str, Any]: Dictionary of Column Attributes.
         """
         return _filter_none_values(asdict(self))
+
+    def get(self, key, default=None) -> Any:
+        return getattr(self, key, default)
+
+    def __contains__(self, key) -> Any:
+        return hasattr(self, key)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+
+@dataclass
+class TextColumnDefinition(ColumnDefinition):
+    """A Class defining attributes for a table column.
+
+    Args:
+        name: str:
+            the column name
+        title: str = None:
+            the plotted title to override the column name
+        width: float = 1:
+            the width of the column as a factor of the default width
+        textprops: Dict[str, Any] = field(default_factory=dict)
+            textprops provided to each textcell
+        formatter: Callable | str = None:
+            Either A Callable or a builtin format string to format
+            the appearance of the texts
+        group: str = None:
+            Each group will get a spanner column label above the column labels.
+        cmap: Callable | LinearSegmentedColormap = None:
+            A Callable that returns a color based on the cells value.
+        text_cmap: Callable | LinearSegmentedColormap = None:
+            A Callable that returns a color based on the cells value.
+        border: str | List = None:
+            Plots a vertical borderline.
+            can be either "left" / "l", "right" / "r" or "both"
+
+
+    """
+
+    name: str
+    title: str = None
+    width: float = 1
+    textprops: Dict[str, Any] = field(default_factory=dict)
+    type: ColumnType = ColumnType.STRING
+    formatter: Callable | str = None
+    group: str = None
+    cmap: Callable | LinearSegmentedColormap = None
+    text_cmap: Callable | LinearSegmentedColormap = None
+    border: str | List = None
+
+    def _as_non_none_dict(self) -> Dict[str, Any]:
+        """Returns the attributes as a dictionary, filtering out
+        keys with None values.
+
+        Returns:
+            Dict[str, Any]: Dictionary of Column Attributes.
+        """
+        return _filter_none_values(asdict(self))
+
+
+@dataclass
+class RichTextColumnDefinition(TextColumnDefinition):
+    type: ColumnType = ColumnType.RICHTEXT
+    richtext_props: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class SubplotColumnDefinition(TextColumnDefinition):
+    """_summary_
+
+    Args:
+        plot_fn: Callable = None
+            A Callable that will take the cells value as input and create a subplot
+            on top of each cell and plot onto them.
+            To pass additional arguments to it, use plot_kw (see below).
+        plot_kw: Dict[str, Any] = field(default_factory=dict)
+            Additional keywords provided to plot_fn.
+    """
+
+    type: ColumnType = ColumnType.SUBPLOT
+    plot_fn: Callable = None
+    plot_kw: Dict[str, Any] = field(default_factory=dict)
+
 
 
 # abbreviated name to reduce writing
