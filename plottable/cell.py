@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from itertools import zip_longest
 from numbers import Number
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from flexitext import flexitext
 from highlight_text import HighlightText
 from matplotlib.offsetbox import AnnotationBbox, HPacker, TextArea, VPacker
-from matplotlib.patches import Circle, Rectangle
-from matplotlib.transforms import ScaledTranslation
+from matplotlib.patches import Rectangle
 
 from plottable.column_def import ColumnDefinition, ColumnType
+from plottable.formatters import apply_formatter
 
 
 def create_cell(
@@ -302,7 +302,18 @@ class TextCell(TableCell):
     def set_text(self):
         x, y = self._get_text_xy()
 
-        self.text = self.ax.text(x, y, str(self.content), **self.textprops)
+        content = self.format_content()
+
+        self.text = self.ax.text(x, y, content, **self.textprops)
+
+    def format_content(self):
+        formatter = str
+        if self.column_definition:
+            formatter = self.column_definition.get("formatter", str)
+            # Can still return None if the key exists but the value is None
+            formatter = formatter or str
+
+        return apply_formatter(formatter, self.content)
 
     def _get_text_xy(self):
         x, y = self.xy
@@ -527,31 +538,41 @@ class RichTextCell(TextCell):
     def set_text(self):
         x, y = self._get_text_xy()
 
+        content = self.format_content()
+
         offsetbox = self._build_text_grid(
-            self.content,
+            content,
             rich_textprops=self.rich_textprops,
             textprops=self.textprops,
         )
 
         ######
         # Show point of alignement for text
-        trans = self.ax.figure.dpi_scale_trans + ScaledTranslation(
-            x, y, self.ax.transData
-        )
 
-        self.ax.add_artist(Circle((0, 0), 0.05, color="red", transform=trans))
+        # trans = self.ax.figure.dpi_scale_trans + ScaledTranslation(
+        #     x, y, self.ax.transData
+        # )
+
+        # self.ax.add_artist(Circle((0, 0), 0.05, color="red", transform=trans))
 
         ######
         self.text = AnnotationBbox(
             offsetbox,
             (x, y),
-            # bboxprops=dict(boxstyle="sawtooth"), # only works if frameon=True
+            # bboxprops=dict(boxstyle="sawtooth"),  # only works if frameon=True
             frameon=False,
-            box_alignment=(0.5, 0),
-            pad=0,
+            pad=0,  # apply to the frame / bbox only; not within the text Packers
+            #
+            # ha = 'right' => 1; va = 'center' => 0.5
+            box_alignment=(1, 0.5),
         )
 
         self.ax.add_artist(self.text)
+
+    def format_content(self):
+        print(self.content)
+        return self.content
+        # return super().format_content()
 
     def _build_text_grid(
         self,
@@ -577,12 +598,24 @@ class RichTextCell(TextCell):
         DEFAULT_TEXTPROPS = {
             "ha": "center",
             "va": "center",
+            "style": "italic",
+            # "color": "red",
         }
 
+        # FIXME Probably not the right way
         textprops_value_fn = lambda val: {}
         if isinstance(rich_textprops, Callable):
             textprops_value_fn = rich_textprops
             rich_textprops = {}
+
+        # TODO
+        # Here we need to:
+        # * check if it is a list
+        # * Apply the number formatter to the value (should be a number [? or not...])
+        # * Retrieve the potential textprops to apply
+        #
+        # There are 2 dimensions here between the number format (eg ".1f") and the 'textprops' (eg. color=green, weight=bold...)
+        # There should be addressed separately
 
         if isinstance(texts, str):
             texts = texts.split("\n")
@@ -592,25 +625,32 @@ class RichTextCell(TextCell):
                     "RichTextCell content cannot be a single-line string. Use TextCell instead."
                 )
 
-        if all(isinstance(item, str) for item in texts):
+        # FIXME if we have list of number (now probably the most frequent case), this fails
+        if all(isinstance(item, str) for item in texts) or 1:
             # List of strings - considered as single-column grid
             textarea_grid = []
 
+            # IDEA `rich_textprops`. `props_line`, `props` should be replaced by a `style` thing that manage itself to apply to the content
+            # TODO Deal with 1D first, then with 2D (YAGNI anyway)
             for text_line, props_line in zip_longest(
                 texts, rich_textprops, fillvalue={}
             ):
                 textarea_row = []
-                if isinstance(text_line, str):
+                if not isinstance(text_line, Sequence):
                     text_line = [text_line]
                 for text, props in zip_longest(
                     text_line, props_line, fillvalue=DEFAULT_TEXTPROPS
                 ):
-                    txtarea_txtprops = props.update(textprops_value_fn(text))
-                    textarea_row.append(TextArea(text, textprops=txtarea_txtprops))
+                    props.update(
+                        textprops_value_fn(text)
+                        | self.column_definition.richtext_props(text)
+                    )  # update returns None. Do not assign
+                    text = self.column_definition.formatter(text)
+                    textarea_row.append(TextArea(text, textprops=props))
                 textarea_grid.append(
                     HPacker(children=textarea_row, pad=0, sep=0, align="center")
                 )
-            return VPacker(children=textarea_grid, pad=0, sep=8, align="center")
+            return VPacker(children=textarea_grid, pad=0, sep=4, align="center")
 
         raise ValueError("Invalid format for texts parameter")
 
