@@ -32,10 +32,13 @@ def create_cell(
     Returns:
         TableCell: plottable.cell.TableCell
     """
-    if cdef := kwargs.get("col_def"):
+    cdef = kwargs.get("column_definition")
+    """
+    if cdef:
         print(f"({kwargs['row_idx']}, {kwargs['col_idx']}): {cdef.type}")
     else:
         print(f"({kwargs['row_idx']}, {kwargs['col_idx']}): No cdef")
+    """
 
     if plot_fn := kwargs.get("plot_fn"):
         return SubplotCell(*args, **kwargs)
@@ -47,8 +50,9 @@ def create_cell(
         return HighlightTextCell(*args, **kwargs)
 
     is_richtextcell = (
-        getattr(cdef, "type", None) is ColumnType.RICHTEXT or "rich_textprops" in kwargs
-    )
+        getattr(cdef, "type", None) is ColumnType.RICHTEXT or 
+        kwargs.get("rich_textprops")
+    )  # fmt: off
 
     if is_richtextcell:
         return RichTextCell(*args, **kwargs)
@@ -95,7 +99,7 @@ class TableCell(Cell):
         height: float = 1,
         ax: mpl.axes.Axes = None,
         rect_kw: Dict[str, Any] = {},
-        col_def: ColumnDefinition | None = None,
+        column_definition: ColumnDefinition | None = None,
     ):
         """
         Args:
@@ -130,7 +134,7 @@ class TableCell(Cell):
             "width": width,
             "height": height,
         }
-        self.column_definition = col_def
+        self.column_definition = column_definition
 
         self.rect_kw.update(rect_kw)
         self.rectangle_patch = Rectangle(xy, **self.rect_kw)
@@ -161,7 +165,7 @@ class SubplotCell(TableCell):
         height: float = 1,
         ax: mpl.axes.Axes = None,
         rect_kw: Dict[str, Any] = {},
-        col_def: ColumnDefinition | None = None,
+        column_definition: ColumnDefinition | None = None,
         **kwargs,
     ):
         """
@@ -196,7 +200,7 @@ class SubplotCell(TableCell):
             col_idx=col_idx,
             ax=ax,
             rect_kw=rect_kw,
-            col_def=col_def,
+            column_definition=column_definition,
         )
 
         self._plot_fn = plot_fn
@@ -246,7 +250,7 @@ class TextCell(TableCell):
         rect_kw: Dict[str, Any] = {},
         textprops: Dict[str, Any] = {},
         padding: float = 0.1,
-        col_def: ColumnDefinition | None = None,
+        column_definition: ColumnDefinition | None = None,
         **kwargs,
     ):
         """
@@ -282,7 +286,7 @@ class TextCell(TableCell):
             col_idx=col_idx,
             ax=ax,
             rect_kw=rect_kw,
-            col_def=col_def,
+            column_definition=column_definition,
         )
 
         self.textprops = {"ha": "right", "va": "center"}
@@ -345,7 +349,7 @@ class HighlightTextCell(TextCell):
         textprops: Dict[str, Any] = {},
         highlight_textprops: Dict[str, Any] | None = None,
         padding: float = 0.1,
-        col_def: ColumnDefinition | None = None,
+        column_definition: ColumnDefinition | None = None,
         **kwargs,
     ):
         """
@@ -383,7 +387,7 @@ class HighlightTextCell(TextCell):
             rect_kw=rect_kw,
             textprops=textprops,
             padding=padding,
-            col_def=col_def,
+            column_definition=column_definition,
         )
 
         self.highlight_textprops = highlight_textprops
@@ -420,7 +424,7 @@ class FlexiTextCell(TextCell):
         textprops: Dict[str, Any] = {},
         flexitext_props: Dict[str, Any] | None = None,
         padding: float = 0.1,
-        col_def: ColumnDefinition | None = None,
+        column_definition: ColumnDefinition | None = None,
         **kwargs,
     ):
         """
@@ -458,7 +462,7 @@ class FlexiTextCell(TextCell):
             rect_kw=rect_kw,
             textprops=textprops,
             padding=padding,
-            col_def=col_def,
+            column_definition=column_definition,
         )
 
         self.flexitext_props = flexitext_props
@@ -498,7 +502,7 @@ class RichTextCell(TextCell):
         textprops: Dict[str, Any] = {},
         rich_textprops: Dict[str, Any] = {},
         padding: float = 0.1,
-        col_def: ColumnDefinition | None = None,
+        column_definition: ColumnDefinition | None = None,
         **kwargs,
     ):
         """
@@ -515,7 +519,7 @@ class RichTextCell(TextCell):
             rect_kw=rect_kw,
             textprops=textprops,
             padding=padding,
-            col_def=col_def,
+            column_definition=column_definition,
         )
 
         self.rich_textprops = rich_textprops
