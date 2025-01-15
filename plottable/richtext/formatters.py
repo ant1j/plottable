@@ -2,6 +2,7 @@ from itertools import zip_longest
 from typing import Protocol, Sequence, TypeVar, runtime_checkable
 
 from plottable.richtext.content import ListContent, ScalarContent
+from plottable.richtext.protocols import Formatter
 from plottable.richtext.utils import apply, depth
 
 T = TypeVar("T")
@@ -28,17 +29,6 @@ class FormatFunction(Protocol):
     def __call__(self, Any) -> str: ...
 
 
-class Formatter(Protocol):
-    def format_content(self, value) -> str:
-        pass
-
-    def format_content_sequence(self, values):
-        pass
-
-    def format_content_nested(self, values):
-        pass
-
-
 class ScalarFormatter:
     def __init__(self, formatters: FormatFunction):
         self.formatters = _init_formatters(formatters)
@@ -46,7 +36,7 @@ class ScalarFormatter:
     def format_content(self, value) -> str:
         return self.formatters(value)
 
-    def format_content_sequence(self, content):
+    def format_content_sequence(self, content) -> Sequence[str]:
         # Apply the single callable to each item
         return [self.format_content(value) for value in content]
 
@@ -63,7 +53,7 @@ class ListFormatter:
     def format_content(self, content) -> str:
         raise NotImplementedError("Cannot use a ListFormatter for a ScalarContent.")
 
-    def format_content_sequence(self, content_seq):
+    def format_content_sequence(self, content_seq) -> Sequence[str]:
         formatters = self.formatters
 
         # result = []
@@ -86,7 +76,7 @@ class ListFormatter:
             )
         ]
 
-    def format_content_nested(self, content):
+    def format_content_nested(self, content) -> Sequence[Sequence[str]]:
         # return [self.format_content_sequence(row, self.formatters) for row in content]
         formatters = self.formatters
 
@@ -122,10 +112,10 @@ class MatrixFormatter:
     ) -> str:
         raise NotImplementedError("Cannot use a MatrixFormatter for a ScalarContent.")
 
-    def format_content_sequence(self, content):
+    def format_content_sequence(self, content) -> Sequence[str]:
         raise NotImplementedError("Cannot use a MatrixFormatter for a ListContent.")
 
-    def format_content_nested(self, content):
+    def format_content_nested(self, content) -> Sequence[Sequence[str]]:
         formatters = self.formatters
         return [
             ListContent(content_row).format(ListFormatter(formatter_row))

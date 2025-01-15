@@ -2,7 +2,7 @@ from itertools import product
 
 import pytest
 
-import plottable.richtext.container as container
+from plottable.richtext import richformat
 from plottable.richtext.utils import depth
 from tests.conftest import parametrize
 
@@ -70,7 +70,7 @@ def test_with_multiple_cases(contents, formatters, expected_formats):
         expected = expected_formats[(cname, fname)]
         if content_depth < formatter_depth:
             continue
-        result = container.richformat(content, formatter)
+        result = richformat(content, formatter)
         # print(f"_{(cname, fname)}_")
         assert result == expected
 
@@ -91,4 +91,4 @@ def test_with_multiple_cases(contents, formatters, expected_formats):
     },
 )
 def test_2D_content_1D_formatter(content, formatter, expected):
-    assert container.richformat(content, formatter) == expected
+    assert richformat(content, formatter) == expected

@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from typing import Any
+from typing import Any, TypeVar
 
 
 def depth(seq: Any) -> int:
@@ -9,7 +9,10 @@ def depth(seq: Any) -> int:
         return 0
 
 
-def apply(func: Callable, data):
+T = TypeVar("T")
+
+
+def apply(func: Callable, data: T) -> T:
     """
     Recursively applies `func` to every non-iterable element
     in `data`, where `data` can be a nested list or tuple.
@@ -17,7 +20,7 @@ def apply(func: Callable, data):
     # Check if 'data' is a list or tuple, and not an empty one
     if iterable_not_string(data) and data:
         # Recursively apply func to each element
-        return type(data)(apply(func, x) for x in data)
+        return type(data)(apply(func, x) for x in data)  # type: ignore
     else:
         # Base case: not a list/tuple, so apply func directly
         return func(data)
