@@ -8,7 +8,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from plottable.cell import Column, Row, SubplotCell, TableCell, create_cell
+from plottable.cell import SubplotCell, TableCell, create_cell
+from plottable.cellsequence import Column, Row
 from plottable.column_def import ColumnDefinition, ColumnsInfos
 from plottable.font import contrasting_font_color
 from plottable.formatters import apply_formatter
@@ -114,15 +115,13 @@ class RichTable:
             column_definitions (list[ColumnDefinition]):
                 List of ColumnDefinitions
         """
-        column_definitions = column_definitions or []
-
-        column_definitions = {_def.name: _def for _def in column_definitions}
+        column_defs = {_def.name: _def for _def in (column_definitions or [])}
 
         for col in self.column_names:
-            if col not in column_definitions:
-                column_definitions[col] = ColumnDefinition(name=col)
+            if col not in column_defs:
+                column_defs[col] = ColumnDefinition(name=col)
 
-        return column_definitions
+        return column_defs
 
     def _init_columns(self) -> dict[str, Column]:
         """Initializes the Tables columns."""
@@ -131,7 +130,7 @@ class RichTable:
             for idx, name in enumerate(self.column_names)
         }
 
-    def _init_rows(self) -> dict[str, Row]:
+    def _init_rows(self) -> dict[int, Row]:
         """Initializes the Tables Rows."""
         return {
             idx: self._build_row(idx, values)
@@ -283,6 +282,9 @@ class RichTable:
 
     def _plot_col_label_divider(self, **kwargs):
         """Plots a line below the column labels."""
+        if not kwargs:
+            return
+
         COL_LABEL_DIVIDER_KW = {"color": plt.rcParams["text.color"], "linewidth": 1}
         if "lw" in kwargs:
             kwargs["linewidth"] = kwargs.pop("lw")
@@ -298,6 +300,9 @@ class RichTable:
 
     def _plot_footer_divider(self, **kwargs):
         """Plots a line below the bottom TableRow."""
+        if not kwargs:
+            return
+
         FOOTER_DIVIDER_KW = {"color": plt.rcParams["text.color"], "linewidth": 1}
         if "lw" in kwargs:
             kwargs["linewidth"] = kwargs.pop("lw")
@@ -337,6 +342,9 @@ class RichTable:
 
     def _plot_row_dividers(self, **kwargs):
         """Plots lines between all TableRows."""
+        if not kwargs:
+            return
+
         ROW_DIVIDER_KW = {
             "color": plt.rcParams["text.color"],
             "linewidth": 0.2,

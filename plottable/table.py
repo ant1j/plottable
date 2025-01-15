@@ -9,7 +9,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from plottable.cell import Column, Row, SubplotCell, TableCell, create_cell
+from plottable.cell import SubplotCell, TableCell, create_cell
+from plottable.cellsequence import Column, Row
 from plottable.column_def import ColumnDefinition
 from plottable.font import contrasting_font_color
 from plottable.formatters import apply_formatter

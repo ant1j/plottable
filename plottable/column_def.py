@@ -175,7 +175,10 @@ class TextColumnDefinition(ColumnDefinition):
 @dataclass
 class RichTextColumnDefinition(TextColumnDefinition):
     type: ColumnType = ColumnType.RICHTEXT
-    richtext_props: Dict[str, Any] = field(default_factory=dict)
+    richtext_props: Dict[str, Any] | None = None
+
+    def __post_init__(self):
+        self.formatter = self.formatter or str
 
 
 @dataclass
