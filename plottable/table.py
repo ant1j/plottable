@@ -78,10 +78,10 @@ class Table:
     def __init__(
         self,
         df: pd.DataFrame,
-        ax: mpl.axes.Axes = None,
-        index_col: str = None,
-        columns: List[str] = None,
-        column_definitions: List[ColumnDefinition] = None,
+        ax: mpl.axes.Axes | None = None,
+        index_col: str | None = None,
+        columns: List[str] | None = None,
+        column_definitions: List[ColumnDefinition] | None = None,
         textprops: Dict[str, Any] = {},
         cell_kw: Dict[str, Any] = {},
         col_label_cell_kw: Dict[str, Any] = {},
@@ -92,8 +92,8 @@ class Table:
         col_label_divider_kw: Dict[str, Any] = {},
         footer_divider_kw: Dict[str, Any] = {},
         column_border_kw: Dict[str, Any] = {},
-        even_row_color: str | Tuple = None,
-        odd_row_color: str | Tuple = None,
+        even_row_color: str | Tuple | None = None,
+        odd_row_color: str | Tuple | None = None,
         footer: str = "",
         group_props: Dict[str, Any] = {},
     ):
@@ -424,7 +424,9 @@ class Table:
         return list(self.rows.values())[1::2]
 
     def set_alternating_row_colors(
-        self, color: str | Tuple[float] = None, color2: str | Tuple[float] = None
+        self,
+        color: str | Tuple[float] | None = None,
+        color2: str | Tuple[float] | None = None,
     ) -> Table:
         """Sets the color of even row's rectangle patches to `color`.
 
@@ -625,7 +627,7 @@ class Table:
                     cell.text.set_color(cmap_fn(cell.content))
 
     def autoset_fontcolors(
-        self, fn: Callable = None, colnames: List[str] = None, **kwargs
+        self, fn: Callable | None = None, colnames: List[str] | None = None, **kwargs
     ) -> Table:
         """Sets the fontcolor of each table cell based on the facecolor of its rectangle patch.
 
