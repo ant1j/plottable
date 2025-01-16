@@ -56,17 +56,6 @@ class ListFormatter:
     def format_content_sequence(self, content_seq) -> Sequence[str]:
         formatters = self.formatters
 
-        # result = []
-        # for content, formatter in zip_longest(content_seq, formatters, fillvalue=str):
-        #     # print(content, formatter.__qualname__)
-        #     sc = ScalarContent(content)
-        #     # print(sc)
-        #     sf = ScalarFormatter(formatter)
-        #     # print(sf)
-        #     result.append(sc.format(sf))
-
-        # return result
-
         return [
             ScalarContent(content).format(ScalarFormatter(formatter))
             for content, formatter in zip_longest(
@@ -79,19 +68,6 @@ class ListFormatter:
     def format_content_nested(self, content) -> Sequence[Sequence[str]]:
         # return [self.format_content_sequence(row, self.formatters) for row in content]
         formatters = self.formatters
-
-        # result = []
-        # for content_row, formatter_row in zip_longest(
-        #     content, formatters, fillvalue=str
-        # ):
-        #     # print(content_row, formatter_row.__qualname__)
-        #     lc = ListContent(content_row)
-        #     # print(lc)
-        #     sf = ScalarFormatter(formatter_row)
-        #     # print(lc)
-        #     result.append(lc.format(sf))
-
-        # return result
 
         return [
             ListContent(content_row).format(ScalarFormatter(formatter_row))
