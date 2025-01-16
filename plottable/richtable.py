@@ -334,7 +334,7 @@ class RichTable:
             height=0.5,
             ax=self.ax,
             textprops={"fontsize": 8, "ha": "left", "va": "top"},
-            padding=0.1 / (x1 - x0),
+            padding=0.1,
         )
         footer_cell.draw()
 
@@ -425,6 +425,7 @@ class RichTable:
                 textprops=textprops,
                 ax=self.ax,
                 column_definition=col_def,
+                boxprops=col_def.get("boxprops", {}),
             )
 
             row.append(cell)
@@ -467,10 +468,11 @@ class RichTable:
                 row_idx=idx,
                 col_idx=col_idx,
                 width=width,
-                textprops=self._get_column_textprops(col_def),
                 rect_kw=self.cell_kw,
                 ax=self.ax,
                 column_definition=col_def,
+                textprops=self._get_column_textprops(col_def),
+                boxprops=col_def.get("boxprops", {}),
             )
 
             row.append(cell)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
@@ -24,14 +24,14 @@ class ColumnType(Enum):
     RICHTEXT = "richtext"
 
 
-def _filter_none_values(d: Dict[str, Any]) -> Dict[str, Any]:
+def _filter_none_values(d: dict[str, Any]) -> dict[str, Any]:
     """Filters out keys with None values from a dictionary.
 
     Args:
-        d (Dict[str, Any]): Dictionary
+        d (dict[str, Any]): Dictionary
 
     Returns:
-        Dict[str, Any]: Dictionary without None valued values.
+        dict[str, Any]: Dictionary without None valued values.
     """
     return {k: v for k, v in d.items() if v is not None}
 
@@ -47,7 +47,7 @@ class ColumnDefinition:
             the plotted title to override the column name
         width: float = 1:
             the width of the column as a factor of the default width
-        textprops: Dict[str, Any] = field(default_factory=dict)
+        textprops: dict[str, Any] = field(default_factory=dict)
             textprops provided to each textcell
         formatter: Callable | str = None:
             Either A Callable or a builtin format string to format
@@ -62,9 +62,9 @@ class ColumnDefinition:
             A Callable that will take the cells value as input and create a subplot
             on top of each cell and plot onto them.
             To pass additional arguments to it, use plot_kw (see below).
-        plot_kw: Dict[str, Any] = field(default_factory=dict)
+        plot_kw: dict[str, Any] = field(default_factory=dict)
             Additional keywords provided to plot_fn.
-        border: str | List = None:
+        border: str | list = None:
             Plots a vertical borderline.
             can be either "left" / "l", "right" / "r" or "both"
 
@@ -93,22 +93,22 @@ class ColumnDefinition:
     name: str
     title: str = None  # allows to default to name in Table._get_column_titles
     width: float = 1
-    textprops: Dict[str, Any] = field(default_factory=dict)
+    textprops: dict[str, Any] = field(default_factory=dict)
     type: ColumnType = ColumnType.STRING
     formatter: Callable | str = None
     cmap: Callable | LinearSegmentedColormap = None
     text_cmap: Callable | LinearSegmentedColormap = None
     group: str = None
     plot_fn: Callable = None
-    plot_kw: Dict[str, Any] = field(default_factory=dict)
-    border: str | List = None
+    plot_kw: dict[str, Any] = field(default_factory=dict)
+    border: str | list = None
 
-    def _as_non_none_dict(self) -> Dict[str, Any]:
+    def _as_non_none_dict(self) -> dict[str, Any]:
         """Returns the attributes as a dictionary, filtering out
         keys with None values.
 
         Returns:
-            Dict[str, Any]: Dictionary of Column Attributes.
+            dict[str, Any]: Dictionary of Column Attributes.
         """
         return _filter_none_values(asdict(self))
 
@@ -133,7 +133,7 @@ class TextColumnDefinition(ColumnDefinition):
             the plotted title to override the column name
         width: float = 1:
             the width of the column as a factor of the default width
-        textprops: Dict[str, Any] = field(default_factory=dict)
+        textprops: dict[str, Any] = field(default_factory=dict)
             textprops provided to each textcell
         formatter: Callable | str = None:
             Either A Callable or a builtin format string to format
@@ -144,7 +144,7 @@ class TextColumnDefinition(ColumnDefinition):
             A Callable that returns a color based on the cells value.
         text_cmap: Callable | LinearSegmentedColormap = None:
             A Callable that returns a color based on the cells value.
-        border: str | List = None:
+        border: str | list = None:
             Plots a vertical borderline.
             can be either "left" / "l", "right" / "r" or "both"
 
@@ -154,20 +154,20 @@ class TextColumnDefinition(ColumnDefinition):
     name: str
     title: str = None
     width: float = 1
-    textprops: Dict[str, Any] = field(default_factory=dict)
+    textprops: dict[str, Any] = field(default_factory=dict)
     type: ColumnType = ColumnType.STRING
     formatter: Callable | str = None
     group: str = None
     cmap: Callable | LinearSegmentedColormap = None
     text_cmap: Callable | LinearSegmentedColormap = None
-    border: str | List = None
+    border: str | list = None
 
-    def _as_non_none_dict(self) -> Dict[str, Any]:
+    def _as_non_none_dict(self) -> dict[str, Any]:
         """Returns the attributes as a dictionary, filtering out
         keys with None values.
 
         Returns:
-            Dict[str, Any]: Dictionary of Column Attributes.
+            dict[str, Any]: Dictionary of Column Attributes.
         """
         return _filter_none_values(asdict(self))
 
@@ -175,7 +175,8 @@ class TextColumnDefinition(ColumnDefinition):
 @dataclass
 class RichTextColumnDefinition(TextColumnDefinition):
     type: ColumnType = ColumnType.RICHTEXT
-    richtext_props: Dict[str, Any] | None = None
+    richtext_props: dict[str, Any] = field(default_factory=dict)
+    boxprops: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         self.formatter = self.formatter or str
@@ -190,13 +191,13 @@ class SubplotColumnDefinition(TextColumnDefinition):
             A Callable that will take the cells value as input and create a subplot
             on top of each cell and plot onto them.
             To pass additional arguments to it, use plot_kw (see below).
-        plot_kw: Dict[str, Any] = field(default_factory=dict)
+        plot_kw: dict[str, Any] = field(default_factory=dict)
             Additional keywords provided to plot_fn.
     """
 
     type: ColumnType = ColumnType.SUBPLOT
     plot_fn: Callable = None
-    plot_kw: Dict[str, Any] = field(default_factory=dict)
+    plot_kw: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
