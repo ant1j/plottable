@@ -113,7 +113,7 @@ class TextCell(TableCell):
         ax: mpl.axes.Axes = None,
         rect_kw: dict[str, Any] = {},
         textprops: dict[str, Any] = {},
-        padding: float = 0.1,
+        padding: float = 0.05,
         column_definition: ColumnDefinition | None = None,
         **kwargs,
     ):
@@ -179,13 +179,18 @@ class TextCell(TableCell):
 
         return apply_formatter(formatter, self.content)
 
-    def _get_text_xy(self):
+    def _get_text_xy(self, padding: float | None = None):
         x, y = self.xy
 
+        padding = padding or self.padding
+
+        # FIXME Remove padding being proportional to the size of the cell.
         if self.ha == "left":
-            x = x + self.padding * self.width
+            # x = x + padding * self.width
+            x = x + padding
         elif self.ha == "right":
-            x = x + (1 - self.padding) * self.width
+            # x = x + (1 - padding) * self.width
+            x = x + self.width - padding
         elif self.ha == "center":
             x = x + self.width / 2
         else:
@@ -197,10 +202,12 @@ class TextCell(TableCell):
             y += self.height / 2
         elif self.va == "bottom":
             # CHANGED
-            y = y + (1 - self.padding) * self.height
+            # y = y + (1 - padding) * self.height
+            y = y + self.height - padding
         elif self.va == "top":
             # CHANGED
-            y = y + self.padding * self.height
+            # y = y + padding * self.height
+            y = y + padding
 
         return x, y
 
