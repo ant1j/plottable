@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from enum import Enum
+from itertools import accumulate
 from typing import Any, Callable
 
 import pandas as pd
@@ -239,6 +240,22 @@ class ColumnsInfos:
             name if not title else title
             for name, title in zip(self.names, self.pluck("title"))
         ]
+
+    def widths(self, cumsum=False):
+        widths = self.pluck("width", 1)
+
+        if cumsum:
+            return list(accumulate([0] + widths))
+
+        return widths
+
+    def heights(self, cumsum=False):
+        heights = self.pluck("width", 1)
+
+        if cumsum:
+            return list(accumulate([0] + heights))
+
+        return heights
 
     def get_columns_by_group(self):
         groups = defaultdict(list)
