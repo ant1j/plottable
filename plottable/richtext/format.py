@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from numbers import Number
 from typing import Any, Sequence
 
 from plottable.richtext.content import make_content
 from plottable.richtext.formatters import make_formatter
-from plottable.richtext.utils import iterable_not_string
+from plottable.richtext.utils import (
+    _dict_to_funcdict,
+    apply_to_list,
+    iterable_not_string,
+)
 
 
-def richformat(data, formatter):
+def richformat(data, formatter: Callable):
     """
     Create the appropriate Content and Formatter objects,
     then apply the latter to the former.
@@ -21,8 +26,8 @@ def richformat(data, formatter):
 
 @dataclass
 class RichContent:
-    value: str | Sequence
-    formatted_value: str | Sequence
+    value: Any
+    formatted_value: str
     style_props: dict = field(default_factory=dict)
 
 
@@ -34,10 +39,13 @@ class RichContentSequence:
 
     @classmethod
     def from_formatting_funcs(
-        cls, data, values_formatter=None, props_formatter=None
+        cls, data: Sequence | str, values_formatter=None, props_formatter=None
     ) -> RichContentSequence:
         if isinstance(data, str):
             data = data.splitlines()
+
+        values_formatter = values_formatter or str
+        props_formatter = _dict_to_funcdict(props_formatter or (lambda x: {}))
 
         formatted_values = richformat(data=data, formatter=values_formatter)
         style_props = richformat(data=data, formatter=props_formatter)
@@ -46,10 +54,18 @@ class RichContentSequence:
             values=data, formatted_values=formatted_values, style_props=style_props
         )
 
+    def _dict_to_funcdict(self, props_formatter):
+        """IF we have dicts in, we want functions returning those dicts out."""
+
+        def lamdaize_dict(dict_call):
+            return dict_call if callable(dict_call) else (lambda x: dict_call)
+
+        return apply_to_list(lamdaize_dict, props_formatter)
+
     def to_dict(self):
         return asdict(self)
 
-    def to_records(self, data=None):
+    def to_records(self, data=None) -> list[RichContent] | list[list[RichContent]]:
         if data is None:
             values, formatted_values, style_props = (
                 self.values,
@@ -106,12 +122,26 @@ if __name__ == "__main__":
             return f"{x:+.0%}"
         return x
 
-    rc = RichContentSequence.from_formatting_funcs(
-        data=data, values_formatter=pct, props_formatter=fontcolour_from_value
+    # rc = RichContentSequence.from_formatting_funcs(
+    #     data=data[0], values_formatter=pct, props_formatter=fontcolour_from_value
+    # )
+
+    # # res = apply_rich_formatting(
+    # #     data=data, values_formatter=pct, props_formatter=fontcolour_from_value
+    # # )
+    # wat.short(rc.to_dict())
+    # wat.short(list(rc.to_records()))
+
+    group_label_style = [
+        dict(fontsize=14, weight="demibold"),
+        dict(style="italic"),
+    ]
+
+    rc2 = RichContentSequence.from_formatting_funcs(
+        data="Entry T.O.\n(2023)",
+        values_formatter=pct,
+        props_formatter=group_label_style,
     )
 
-    # res = apply_rich_formatting(
-    #     data=data, values_formatter=pct, props_formatter=fontcolour_from_value
-    # )
-    wat.short(rc.to_dict())
-    wat.short(list(rc.to_records()))
+    # wat.short(rc2.to_dict())
+    wat.short(list(rc2.to_records()))
