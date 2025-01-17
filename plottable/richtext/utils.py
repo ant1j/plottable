@@ -1,9 +1,9 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, TypeVar
 
 
 def depth(seq: Any) -> int:
-    if iterable_not_string(seq):
+    if iterable_not_string(seq) and not isinstance(seq, Mapping):
         return 1 + max(depth(item) for item in seq) if seq else 1
     else:
         return 0
@@ -24,6 +24,29 @@ def apply(func: Callable, data: T) -> T:
     else:
         # Base case: not a list/tuple, so apply func directly
         return func(data)
+
+
+def apply_to_list(func: Callable, data: T) -> T:
+    """
+    Recursively applies `func` to every non-iterable element
+    in `data`, where `data` can be a nested list or tuple.
+    """
+    # Check if 'data' is a list or tuple, and not an empty one
+    if isinstance(data, list) and data:
+        # Recursively apply func to each element
+        return list(apply_to_list(func, x) for x in data)  # type: ignore
+    else:
+        # Base case: not a list/tuple, so apply func directly
+        return func(data)
+
+
+def _dict_to_funcdict(props_formatter):
+    """IF we have dicts in, we want functions returning those dicts out."""
+
+    def lamdaize_dict(dict_call):
+        return dict_call if callable(dict_call) else (lambda x: dict_call)
+
+    return apply_to_list(lamdaize_dict, props_formatter)
 
 
 # https://github.com/pandas-dev/pandas/blob/main/pandas/core/dtypes/inference.py#L78
@@ -81,3 +104,16 @@ def is_multiline(text: str, strip=True):
     text = text.strip() if strip else text
 
     return len(text.splitlines()) > 1
+
+
+if __name__ == "__main__":
+    import wat
+
+    group_label_style = [
+        dict(fontsize=14, weight="demibold"),
+        dict(style="italic"),
+    ]
+
+    wat.short(group_label_style)
+    wat.short(_dict_to_funcdict(group_label_style))
+    print()

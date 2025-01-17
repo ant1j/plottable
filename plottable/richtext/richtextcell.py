@@ -30,10 +30,12 @@ class RichTextCell(TextCell):
         ax: Axes = None,
         rect_kw: dict[str, Any] = {},
         padding: float = 0.05,
-        column_definition: RichTextColumnDefinition | None = None,
         textprops: dict[str, Any] = {},
         rich_textprops: dict[str, Any] = {},
         boxprops: dict[str, Any] = {},
+        values_formatter: Callable = str,
+        textprops_formatter: Callable | None = None,
+        column_definition: RichTextColumnDefinition | None = None,
         **kwargs,
     ):
         """ """
@@ -53,6 +55,10 @@ class RichTextCell(TextCell):
 
         self.rich_textprops = rich_textprops
         self.boxprops = boxprops
+        self.values_formatter = (
+            values_formatter or self.column_definition.get("formatter") or str
+        )
+        self.textprops_formatter = textprops_formatter
 
         # if rich_textprops:
         #     self.rich_textprops = rich_textprops
@@ -66,20 +72,25 @@ class RichTextCell(TextCell):
     def set_text(self):
         x, y = self._get_text_xy()
 
-        content = self.format_content()
+        # offsetbox = self._build_text_grid(
+        #     self.content, rich_textprops=self.rich_textprops
+        # )
 
-        offsetbox = self._build_text_grid(content, rich_textprops=self.rich_textprops)
+        offsetbox = self._build_content(content=self.content)
 
         ######
         # Show point of alignement for text
-
-        # trans = self.ax.figure.dpi_scale_trans + ScaledTranslation(
-        #     x, y, self.ax.transData
+        # self.ax.add_artist(
+        #     Circle(
+        #         (0, 0),
+        #         0.05,
+        #         color="red",
+        #         transform=self.ax.figure.dpi_scale_trans
+        #         + ScaledTranslation(x, y, self.ax.transData),
+        #     )
         # )
-
-        # self.ax.add_artist(Circle((0, 0), 0.05, color="red", transform=trans))
-
         ######
+
         self.text = AnnotationBbox(
             offsetbox,
             (x, y),
@@ -87,7 +98,7 @@ class RichTextCell(TextCell):
                 boxstyle="square", lw=1, ec="lightpink"
             ),  # only works if frameon=True
             frameon=False,
-            pad=5,  # apply to the frame / bbox only; not within the text Packers
+            pad=0,  # apply to the frame / bbox only; not within the text Packers
             #
             # ha = 'right' => 1; va = 'center' => 0.5
             #
@@ -101,11 +112,6 @@ class RichTextCell(TextCell):
         )
 
         self.ax.add_artist(self.text)
-
-    def format_content(self):
-        # print(self.content)
-        return self.content
-        # return super().format_content()
 
     def _build_text_grid(
         self,
@@ -123,9 +129,7 @@ class RichTextCell(TextCell):
                 Its structure should strictly follow the `texts` structure
             textprops (dict, optional): properties to be applied to each span of text. Defaults to {}.
 
-        Raises:
-            ValueError: _description_
-            ValueError: _description_
+
 
         Returns:
             VPacker: _description_
@@ -171,6 +175,9 @@ class RichTextCell(TextCell):
                 textarea_row = []
                 if not isinstance(text_line, Sequence) or isinstance(text_line, str):
                     text_line = [text_line]
+                if isinstance(props_line, dict):
+                    props_line = [props_line]
+
                 for text, props in zip_longest(
                     text_line, props_line, fillvalue=DEFAULT_TEXTPROPS
                 ):
@@ -180,6 +187,8 @@ class RichTextCell(TextCell):
                     if self.column_definition:
                         col_def_props = self.column_definition.richtext_props(text)
                         fmtter = self.column_definition.formatter
+
+                    # print(props)
 
                     props.update(
                         textprops_value_fn(text) | col_def_props
@@ -220,15 +229,55 @@ class RichTextCell(TextCell):
     def _build_content(
         self,
         content: Sequence | str,
-        rich_textprops: Sequence[dict],
-        textprops: dict = {},
-        boxprops: dict | ChainMap = {},
     ) -> VPacker:
         """Build Content"""
 
-        rc = RichContentSequence.from_formatting_funcs(
-            data=content.splitlines(),
-            values_formatter=,
-            props_formatter=fontcolour_from_value,
+        boxprops = dict(ha="center", va="center") | self.boxprops
+
+        if isinstance(self.rich_textprops, Callable):
+            print("Use textprops_formatter now please")
+
+        textprops_formatter = (
+            self.textprops_formatter
+            or self.rich_textprops
+            or self.column_definition.richtext_props
+            or (lambda x: {})
         )
-        return VPacker
+
+        rich_content_seq = RichContentSequence.from_formatting_funcs(
+            data=content,
+            values_formatter=self.values_formatter,
+            props_formatter=textprops_formatter,
+        )
+
+        textarea_grid = []
+        for rc_seq in rich_content_seq.to_records():
+            textarea_row = []
+
+            if not isinstance(rc_seq, Sequence):
+                rc_seq = [rc_seq]
+
+            for rich_content in rc_seq:
+                textarea_row.append(
+                    TextArea(
+                        rich_content.formatted_value, textprops=rich_content.style_props
+                    )
+                )
+
+            textarea_grid.append(
+                HPacker(children=textarea_row, pad=0, sep=0, align=boxprops["va"])
+            )
+
+        return VPacker(
+            children=textarea_grid,
+            pad=0,
+            # Space between the children
+            sep=4,
+            # defines how the children are aligned - this should use the `textprops` defined early
+            # We want the richcell content (a group of text) to align just like a regular text
+            align=boxprops["ha"],
+        )
+
+    def __getattr__(self, attr):
+        print(f"trying to call {attr}")
+        return
