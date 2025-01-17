@@ -12,7 +12,6 @@ from plottable.cell import SubplotCell, TableCell, create_cell
 from plottable.cellsequence import Column, Row
 from plottable.column_def import ColumnDefinition, ColumnsInfos
 from plottable.font import contrasting_font_color
-from plottable.formatters import apply_formatter
 from plottable.helpers import _replace_lw_key
 
 
@@ -139,7 +138,7 @@ class RichTable:
 
     def _apply_table_formatting_rules(self, even_row_color, odd_row_color):
         self._apply_alternating_row_colors(even_row_color, odd_row_color)
-        self._apply_column_formatters()
+        # self._apply_column_formatters()
         self._apply_column_cmaps()
         self._apply_column_text_cmaps()
 
@@ -166,24 +165,6 @@ class RichTable:
                 row.set_facecolor(color2)
 
         return self
-
-    def _apply_column_formatters(self) -> None:
-        """
-        Formatting should be down at Cell level,
-        to adapt the right formatting rules"""
-        return
-
-        for colname, _dict in self.column_definitions.items():
-            formatter = _dict.get("formatter")
-            if formatter is None:
-                continue
-
-            for cell in self.columns[colname].cells:
-                if not hasattr(cell, "text"):
-                    continue
-
-                formatted = apply_formatter(formatter, cell.content)
-                cell.text.set_text(formatted)
 
     def _apply_column_cmaps(self) -> None:
         for colname, _dict in self.column_definitions.items():
@@ -473,6 +454,7 @@ class RichTable:
                 column_definition=col_def,
                 textprops=self._get_column_textprops(col_def),
                 boxprops=col_def.get("boxprops", {}),
+                values_formatter=col_def.get("formatter"),
             )
 
             row.append(cell)
