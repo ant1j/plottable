@@ -1,24 +1,29 @@
+from collections.abc import Sequence
 from statistics import mean
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.collections import PathCollection
+from matplotlib.colors import Colormap
+from matplotlib.container import BarContainer
+from matplotlib.image import AxesImage
 from matplotlib.patches import BoxStyle, Circle, FancyBboxPatch, Rectangle, Wedge
 from PIL import Image
 
 from .formatters import apply_formatter
 
 
-def image(ax: matplotlib.axes.Axes, path: str) -> matplotlib.image.AxesImage:
+def image(ax: Axes, path: str) -> AxesImage:
     """Plots an image on the axes.
 
     Args:
-        ax (matplotlib.axes.Axes): Axes
+        ax (Axes): Axes
         path (str): path to image file
 
     Returns:
-       matplotlib.image.AxesImage
+       AxesImage
     """
     img = plt.imread(path)
     im = ax.imshow(img)
@@ -27,15 +32,15 @@ def image(ax: matplotlib.axes.Axes, path: str) -> matplotlib.image.AxesImage:
     return im
 
 
-def monochrome_image(ax: matplotlib.axes.Axes, path: str) -> matplotlib.image.AxesImage:
+def monochrome_image(ax: Axes, path: str) -> AxesImage:
     """Plots a monochrome image on the axes.
 
     Args:
-        ax (matplotlib.axes.Axes): Axes
+        ax (Axes): Axes
         path (str): path to image file
 
     Returns:
-       matplotlib.image.AxesImage
+       AxesImage
     """
     img = Image.open(path).convert("LA")
     im = ax.imshow(img)
@@ -44,18 +49,16 @@ def monochrome_image(ax: matplotlib.axes.Axes, path: str) -> matplotlib.image.Ax
     return im
 
 
-def circled_image(
-    ax: matplotlib.axes.Axes, path: str, **circle_kwargs
-) -> matplotlib.image.AxesImage:
+def circled_image(ax: Axes, path: str, **circle_kwargs) -> AxesImage:
     """Plots an image cropped to a circle on the axes.
     The cropping radius is the minimum of (width, height) of the image.
 
     Args:
-        ax (matplotlib.axes.Axes): Axes
+        ax (Axes): Axes
         path (str): path to image file
 
     Returns:
-        matplotlib.image.AxesImage
+        AxesImage
     """
     circle_kw = {
         "visible": False,
@@ -83,26 +86,27 @@ def circled_image(
 
 
 def bar(
-    ax: matplotlib.axes.Axes,
+    ax: Axes,
     val: float,
-    xlim: Tuple[float, float] = (0, 1),
-    cmap: matplotlib.colors.Colormap = None,
+    xlim: tuple[float, float] = (0, 1),
+    cmap: Colormap | None = None,
     plot_bg_bar: bool = False,
     annotate: bool = False,
-    textprops: Dict[str, Any] = {},
-    formatter: Callable = None,
+    textprops: dict[str, Any] = {},
+    formatter: Callable | None = None,
+    values=None,
     **kwargs,
-) -> matplotlib.container.BarContainer:
+) -> BarContainer:
     """Plots a bar on the axes.
 
     Args:
-        ax (matplotlib.axes.Axes):
+        ax (Axes):
             Axes
         val (float):
             value
-        xlim (Tuple[float, float], optional):
+        xlim (tuple[float, float], optional):
             data limit for the x-axis. Defaults to (0, 1).
-        cmap (matplotlib.colors.Colormap, optional):
+        cmap (Colormap, optional):
             colormap. Defaults to None.
         plot_bg_bar (bool, optional):
             whether to plot a background bar. Defaults to False.
@@ -116,8 +120,12 @@ def bar(
             Or a Callable that is applied to the value. Defaults to None.
 
     Returns:
-        matplotlib.container.BarContainer
+        BarContainer
     """
+    values = values or [-1]
+    if (maxv := max(values)) > xlim[1]:
+        # print(f"Changed Limit: {xlim[1]=}, {values=}")
+        xlim = (xlim[0], maxv * 1.1)
 
     if "color" in kwargs:
         color = kwargs.pop("color")
@@ -166,33 +174,33 @@ def bar(
 
 
 def percentile_bars(
-    ax: matplotlib.axes.Axes,
+    ax: Axes,
     val: float,
     color: str = None,
     background_color: str = None,
-    cmap: matplotlib.colors.Colormap = None,
+    cmap: Colormap = None,
     is_pct=False,
-    rect_kw: Dict[str, Any] = {},
-) -> List[matplotlib.patches.FancyBboxPatch]:
+    rect_kw: dict[str, Any] = {},
+) -> list[FancyBboxPatch]:
     """Plots percentile bars on the axes.
 
     Args:
-        ax (matplotlib.axes.Axes): Axes
+        ax (Axes): Axes
         val (float): value
         color (str, optional):
             color of the bars. Defaults to None.
         background_color (str, optional):
             background_color of the bars if value is not reached. Defaults to None.
-        cmap (matplotlib.colors.Colormap, optional):
+        cmap (Colormap, optional):
             Colormap. Defaults to None.
         is_pct (bool, optional):
             whether the value is given not as a decimal, but as a value between 0 and 100.
             Defaults to False.
-        rect_kw (Dict[str, Any], optional):
-            rect keywords passed to matplotlib.patches.FancyBboxPatch. Defaults to {}.
+        rect_kw (dict[str, Any], optional):
+            rect keywords passed to FancyBboxPatch. Defaults to {}.
 
     Returns:
-        List[matplotlib.patches.FancyBboxPatch]
+        List[FancyBboxPatch]
     """
 
     _rect_kw = {
@@ -255,7 +263,7 @@ def percentile_bars(
 
 
 def percentile_stars(
-    ax: matplotlib.axes.Axes,
+    ax: Axes,
     val: float,
     n_stars: int = 5,
     color: str = "orange",
@@ -263,11 +271,11 @@ def percentile_stars(
     is_pct: bool = False,
     padding: float = 0.1,
     **kwargs,
-) -> matplotlib.collections.PathCollection:
+) -> PathCollection:
     """Plots x out of 5 percentile stars on the axes.
 
     Args:
-        ax (matplotlib.axes.Axes): Axes
+        ax (Axes): Axes
         val (float): value
         n_stars (int, optional):
             number of maximum stars. Defaults to 5.
@@ -282,7 +290,7 @@ def percentile_stars(
             horizontal and vertical padding from stars to axes border. Defaults to 0.1.
 
     Returns:
-        matplotlib.collections.PathCollection
+        PathCollection
     """
     if background_color is None:
         background_color = ax.get_facecolor()
@@ -315,21 +323,21 @@ def percentile_stars(
 
 
 def progress_donut(
-    ax: matplotlib.axes.Axes,
+    ax: Axes,
     val: float,
     radius: float = 0.45,
     color: str = None,
     background_color: str = None,
     width: float = 0.05,
     is_pct: bool = False,
-    textprops: Dict[str, Any] = {},
+    textprops: dict[str, Any] = {},
     formatter: Callable = None,
     **kwargs,
-) -> List[matplotlib.patches.Wedge]:
+) -> list[Wedge]:
     """Plots a Progress Donut on the axes.
 
     Args:
-        ax (matplotlib.axes.Axes): Axes
+        ax (Axes): Axes
         val (float): value
         radius (float, optional):
             radius of the progress donut. Defaults to 0.45.
@@ -342,7 +350,7 @@ def progress_donut(
         is_pct (bool, optional):
             whether the value is given not as a decimal, but as a value between 0 and 100.
             Defaults to False.
-        textprops (Dict[str, Any], optional):
+        textprops (dict[str, Any], optional):
             textprops passed to ax.text. Defaults to {}.
         formatter (Callable, optional):
             a string formatter.

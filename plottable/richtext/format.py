@@ -140,6 +140,3 @@ if __name__ == "__main__":
         values_formatter=pct,
         props_formatter=group_label_style,
     )
-
-    # wat.short(rc2.to_dict())
-    # wat.short(list(rc2.to_records()))

@@ -19,7 +19,7 @@ class RichTable:
     def __init__(
         self,
         table: pd.DataFrame,
-        ax: mpl.axes.Axes = None,
+        ax: mpl.axes.Axes | None = None,
         column_definitions: list[ColumnDefinition] | None = None,
         textprops: dict[str, Any] = {},
         cell_kw: dict[str, Any] = {},
@@ -29,8 +29,8 @@ class RichTable:
         row_dividers: bool = True,
         row_divider_kw: dict[str, Any] = {},
         column_border_kw: dict[str, Any] = {},
-        even_row_color: str | tuple = None,
-        odd_row_color: str | tuple = None,
+        even_row_color: str | tuple | None = None,
+        odd_row_color: str | tuple | None = None,
         footer: str = "",
         footer_divider: bool = False,
         footer_divider_kw: dict[str, Any] = {},
@@ -143,7 +143,9 @@ class RichTable:
         self._apply_column_text_cmaps()
 
     def _apply_alternating_row_colors(
-        self, color: str | tuple[float] = None, color2: str | tuple[float] = None
+        self,
+        color: str | tuple[float] | None = None,
+        color2: str | tuple[float] | None = None,
     ) -> RichTable:
         """Sets the color of even row's rectangle patches to `color`.
 
@@ -312,10 +314,10 @@ class RichTable:
             row_idx=y,
             col_idx=1,
             width=x1 - x0,
-            height=0.5,
+            height=0.35,
             ax=self.ax,
-            textprops={"fontsize": 8, "ha": "left", "va": "top"},
-            padding=0.1,
+            textprops={"fontsize": 8, "ha": "right", "va": "bottom"},
+            padding=0.05,
         )
         footer_cell.draw()
 
@@ -455,6 +457,7 @@ class RichTable:
                 textprops=self._get_column_textprops(col_def),
                 boxprops=col_def.get("boxprops", {}),
                 values_formatter=col_def.get("formatter"),
+                table=self.table,
             )
 
             row.append(cell)
@@ -465,7 +468,7 @@ class RichTable:
         return row
 
     def autoset_fontcolors(
-        self, fn: Callable = None, colnames: list[str] = None, **kwargs
+        self, fn: Callable | None = None, colnames: list[str] | None = None, **kwargs
     ) -> RichTable:
         """Sets the fontcolor of each table cell based on the facecolor of its rectangle patch.
 

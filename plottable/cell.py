@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 import matplotlib as mpl
 
@@ -57,7 +57,7 @@ def create_cell(
 
 class SubplotCell(TableCell):
     """A SubplotTableCell class for a plottable.table.Table that creates a subplot on top of
-    it's rectangle patch.
+    its rectangle patch.
     """
 
     def __init__(
@@ -73,6 +73,7 @@ class SubplotCell(TableCell):
         ax: mpl.axes.Axes = None,
         rect_kw: dict[str, Any] = {},
         column_definition: ColumnDefinition | None = None,
+        table=None,
         **kwargs,
     ):
         """
@@ -113,10 +114,14 @@ class SubplotCell(TableCell):
         self._plot_fn = plot_fn
         self._plot_kw = plot_kw
         self.fig = self.ax.figure
+        self.table = table
         self.draw()
 
     def plot(self):
-        self._plot_fn(self.axes_inset, self.content, **self._plot_kw)
+        values = self.table[self.column_definition.name].to_list()
+        self._plot_kw["values"] = values
+
+        self._plot_fn(ax=self.axes_inset, val=self.content, **self._plot_kw)
 
     def make_axes_inset(self):
         rect_fig_coords = self._get_rectangle_bounds()
