@@ -16,6 +16,9 @@ from plottable.richtext.format import RichContentSequence
 class RichTextCell(TextCell):
     """A RichTextCell class for a RichTable that creates a text inside its rectangle patch."""
 
+    # Defines how the Box will be drawn, from the reference point xy
+    # (0.5, 0.5) = ref point is in the middle of the bbox (5 on a numpad)
+    # (1, 0.5) = ref point is on the right side, middle vertically ('6' on a numpad)
     HORIZONTAL_ALIGNMENT = {"center": 0.5, "left": 0, "right": 1}
     VERTICAL_ALIGNMENT = {"center": 0.5, "top": 1, "bottom": 0}
 
@@ -38,7 +41,12 @@ class RichTextCell(TextCell):
         column_definition: RichTextColumnDefinition | None = None,
         **kwargs,
     ):
-        """ """
+        """
+        TODO
+        Simplify the parameter list - some are not useful anymore.
+        Some are duplicates
+
+        """
         super().__init__(
             xy=xy,
             width=width,
@@ -60,55 +68,22 @@ class RichTextCell(TextCell):
         )
         self.textprops_formatter = textprops_formatter
 
-        # if rich_textprops:
-        #     self.rich_textprops = rich_textprops
-        # else:
-        #     if self.column_definition:
-        #         self.rich_textprops = self.column_definition.get("richtext_props")
-
-        # if not self.rich_textprops:
-        #     self.rich_textprops = lambda x: {}
-
     def set_text(self):
         x, y = self._get_text_xy()
 
-        # offsetbox = self._build_text_grid(
-        #     self.content, rich_textprops=self.rich_textprops
-        # )
-
-        offsetbox = self._build_content(content=self.content)
-
-        ######
-        # Show point of alignement for text
-        # self.ax.add_artist(
-        #     Circle(
-        #         (0, 0),
-        #         0.05,
-        #         color="red",
-        #         transform=self.ax.figure.dpi_scale_trans
-        #         + ScaledTranslation(x, y, self.ax.transData),
-        #     )
-        # )
-        ######
+        box_alignment = (
+            self.HORIZONTAL_ALIGNMENT[self.textprops.get("ha", "right")],
+            self.VERTICAL_ALIGNMENT[self.textprops.get("va", "center")],
+        )
 
         self.text = AnnotationBbox(
-            offsetbox,
+            self._build_content(content=self.content),
             (x, y),
-            bboxprops=dict(
-                boxstyle="square", lw=1, ec="lightpink"
-            ),  # only works if frameon=True
+            # only works if frameon=True
+            bboxprops=dict(boxstyle="square", lw=1, ec="lightpink"),
             frameon=False,
             pad=0,  # apply to the frame / bbox only; not within the text Packers
-            #
-            # ha = 'right' => 1; va = 'center' => 0.5
-            #
-            # Defines how the Box will be drawn, from the reference point xy
-            # (0.5, 0.5) = ref point is in the middle of the bbox (5 on a numpad)
-            # (1, 0.5) = ref point is on the right side, middle vertically ('6' on a numpad)
-            box_alignment=(
-                self.HORIZONTAL_ALIGNMENT[self.textprops.get("ha", "right")],
-                self.VERTICAL_ALIGNMENT[self.textprops.get("va", "center")],
-            ),
+            box_alignment=box_alignment,
         )
 
         self.ax.add_artist(self.text)
@@ -230,7 +205,14 @@ class RichTextCell(TextCell):
         self,
         content: Sequence | str,
     ) -> VPacker:
-        """Build Content"""
+        """Build Content with TextArea, HPacker, VPacker to feed a AnnotationBBox.
+
+        this is the update of _build_text_grid after a 1st refactoring.
+
+        TODO
+        * Refactor to OO
+        * Regroup and simplify the different level of props
+        """
 
         boxprops = dict(ha="center", va="center") | self.boxprops
 
@@ -240,6 +222,7 @@ class RichTextCell(TextCell):
         textprops_formatter = (
             self.textprops_formatter
             or self.rich_textprops
+            # BUG colDef does not always exists
             or self.column_definition.richtext_props
             or (lambda x: {})
         )
@@ -281,3 +264,22 @@ class RichTextCell(TextCell):
     def __getattr__(self, attr):
         print(f"trying to call {attr}")
         return
+
+    def __show_reference_point(self):
+        """
+        Just keeping it for reference
+
+        Concrete use of a transforms to get a real Circle (whatever the scale / axis ratio is) at the right data coordinates
+        """
+        #####
+        # Show point of alignement for text
+        self.ax.add_artist(
+            Circle(
+                (0, 0),
+                0.05,
+                color="red",
+                transform=self.ax.figure.dpi_scale_trans
+                + ScaledTranslation(x, y, self.ax.transData),
+            )
+        )
+        #####

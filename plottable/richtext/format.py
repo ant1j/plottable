@@ -100,8 +100,6 @@ def apply_rich_formatting(data, values_formatter=None, props_formatter=None):
 
 
 if __name__ == "__main__":
-    import wat
-
     data = [[0.306134, -0.0617, 0.043836, 0], [0.306134, -0.0617, 0.043836, 0]]
 
     def pick_colour(val: Number):
@@ -144,4 +142,4 @@ if __name__ == "__main__":
     )
 
     # wat.short(rc2.to_dict())
-    wat.short(list(rc2.to_records()))
+    # wat.short(list(rc2.to_records()))
