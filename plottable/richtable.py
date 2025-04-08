@@ -259,8 +259,9 @@ class RichTable:
                 [x_min + 0.05 * dx, x_max - 0.05 * dx],
                 # CHANGED Add height (1) to have the border at the botton of the Rectangle patch of the group label
                 [y + GROUP_LABEL_KW["height"], y + GROUP_LABEL_KW["height"]],
-                lw=0.2,
-                color=plt.rcParams["text.color"],
+                lw=1,
+                # color=plt.rcParams["text.color"],
+                color="lightgrey",
             )
 
     def _plot_col_label_divider(self, **kwargs):

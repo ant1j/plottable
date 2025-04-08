@@ -9,4 +9,5 @@ def combine_cols_to_multiline(table, cols: Sequence, mapfn: Callable):
 
 
 def aggregate_columns_to_list(df: pd.DataFrame, columns: Sequence[str]) -> pd.Series:
-    return df[columns].apply(lambda row: row.dropna().tolist(), axis=1)
+    # return df[columns].apply(lambda row: row.dropna().tolist(), axis=1)
+    return df[columns].apply(lambda row: row.fillna(0.0).tolist(), axis=1)
