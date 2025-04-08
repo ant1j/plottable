@@ -221,9 +221,14 @@ class RichTable:
             "height": 0.5,
         }
 
+        prev_group = ""
         for group in [
             group for group in self.column_infos.pluck("group") if group is not None
         ]:
+            # Make sure we create the group cells once per group
+            if group == prev_group:
+                continue
+
             columns = [
                 self.columns[colname]
                 for colname, _dict in self.column_definitions.items()
@@ -263,6 +268,7 @@ class RichTable:
                 # color=plt.rcParams["text.color"],
                 color="lightgrey",
             )
+            prev_group = group
 
     def _plot_col_label_divider(self, **kwargs):
         """Plots a line below the column labels."""

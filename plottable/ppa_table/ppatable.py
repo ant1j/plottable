@@ -92,10 +92,7 @@ class PPATable:
     def build(self):
         # remove nb_cli_ty (not displayed) but used for low base
         nb_cli = self.data.pop("nb_cli_ty").tolist()
-        # self.data.drop(
-        #     labels=["macro_categorie", "nom_micro_categorie"],
-        #     axis=1,
-        # )
+
         self._format_entry_label()
         self._format_category_total()
 
@@ -108,7 +105,8 @@ class PPATable:
         self.fig.tight_layout()
 
         self.rich_table = RichTable(
-            self.data,
+            table=self.data,
+            ax=self.ax,
             column_definitions=self.config.column_definitions,
             col_label_divider=False,
             col_label_cell_kw={"height": 0.5},
