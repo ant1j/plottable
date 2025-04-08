@@ -36,10 +36,13 @@ def kdollar(x):
 
 def percentage_points(x):
     if isinstance(x, Number):
-        return f"{x:+.0f}ₚₚ"
-        # return f"{x:+.0f}ᵨᵨ"
+        return f"{x:+.0f}pp"
     return x
 
+def percentage_points_pp(x):
+    if isinstance(x, Number):
+        return f"{x:+.0f}ₚₚ"
+    return x
 
 def pct(x):
     if isinstance(x, Number):
