@@ -115,7 +115,7 @@ class PPATable:
             group_props=self.config.group_props,
         )
         # tab.col_label_row.set_fontfamily("Century Gothic")
-        self.rich_table.col_label_row.set_fontsize(8)
+        # self.rich_table.col_label_row.set_fontsize(8)
 
         self._format_low_base(criteria=nb_cli)
         self._format_category_font()

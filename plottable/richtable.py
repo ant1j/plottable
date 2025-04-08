@@ -213,6 +213,8 @@ class RichTable:
         self._plot_row_dividers(**row_divider_kw)
         self._plot_column_borders(**column_border_kw)
 
+        return
+
     def _plot_col_group_labels(self, group_props: dict = {}) -> None:
         """Plots the column group labels."""
 

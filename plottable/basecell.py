@@ -168,7 +168,13 @@ class TextCell(TableCell):
 
         content = self.format_content()
 
+        # BUG 
+        # Some text makes PPT export to PDF crash for EMF files 
+        # replacing '' for content makes everything OK 
+        # Not sure why - formatting? Unicode chars?
+        # FIXME
         self.text = self.ax.text(x, y, content, **self.textprops)
+        # self.text = self.ax.text(x, y, '', **self.textprops)
 
     def format_content(self):
         formatter = str
